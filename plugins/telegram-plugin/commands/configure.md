@@ -27,15 +27,35 @@ Explain to user:
 
 Ask user to paste their bot token.
 
-### Step 2: Get Chat ID
+### Step 2: Get Chat ID Automatically
 
-Explain to user:
-1. Send any message to their new bot in Telegram
-2. Visit this URL in browser (replace TOKEN): `https://api.telegram.org/botTOKEN/getUpdates`
-3. Look for `"chat":{"id":123456789}` in the JSON response
-4. Copy the chat ID number
+**Automated Chat ID Discovery:**
 
-Ask user to provide their chat ID.
+1. First, verify the bot token and get bot info:
+   ```bash
+   curl -s "https://api.telegram.org/bot[BOT_TOKEN]/getMe"
+   ```
+   Display the bot username to the user.
+
+2. Instruct user to send a message:
+   - Tell them: "Please open Telegram, search for @[bot_username], and send any message (like '/start' or 'hello')"
+   - Wait for user confirmation
+
+3. Fetch updates to discover chat ID:
+   ```bash
+   curl -s "https://api.telegram.org/bot[BOT_TOKEN]/getUpdates"
+   ```
+
+4. Parse and extract chat IDs:
+   - Look for all unique chat IDs in the response
+   - Extract from `result[].message.chat.id` or `result[].message.from.id`
+   - If one chat found: use it automatically
+   - If multiple chats: show list with usernames, let user choose
+   - If no chats: prompt user to send message and retry
+
+5. Display the found chat ID to user for confirmation
+
+**Note:** Use `jq` for JSON parsing if available, otherwise extract manually using grep/sed.
 
 ### Step 3: Create Configuration File
 

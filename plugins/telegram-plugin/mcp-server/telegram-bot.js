@@ -152,8 +152,11 @@ function escapeMarkdown(text) {
   if (typeof text !== 'string') return '';
 
   // Escape special Markdown characters for Telegram MarkdownV2
-  // Need to escape: _ * [ ] ( ) ~ ` > # + - = | { } . !
-  return text.replace(/[_*\[\]()~`>#+=|{}.!-]/g, '\\$&');
+  // Need to escape: _ * [ ] ( ) ~ ` > # + - = | { } . ! \
+  // IMPORTANT: Escape backslash first to avoid double-escaping
+  return text
+    .replace(/\\/g, '\\\\')
+    .replace(/[_*\[\]()~`>#+=|{}.!-]/g, '\\$&');
 }
 
 // Rotate log files when max size is reached
@@ -353,10 +356,24 @@ async function sendApprovalRequest(question, options, header) {
     const escapedQuestion = escapeMarkdown(question);
     const escapedHeader = escapeMarkdown(header || 'Approval Request');
     const escapedOptions = options.map((o, i) =>
-      `${i + 1}. *${escapeMarkdown(o.label)}*: ${escapeMarkdown(o.description)}`
+      `${i + 1}\\. *${escapeMarkdown(o.label)}*: ${escapeMarkdown(o.description)}`
     ).join('\n');
 
-    const messageText = `🤔 *${escapedHeader}*\n\n${escapedQuestion}\n\n_Options:_\n${escapedOptions}`;
+    const messageText = `🤔 *${escapedHeader}*\n\n${escapedQuestion}\n\n_Options\\:_\n${escapedOptions}`;
+
+    // Debug logging to file
+    const debugPath = join(dirname(__dirname), 'debug-approval.log');
+    const debugInfo = `
+=== APPROVAL REQUEST DEBUG ===
+Time: ${new Date().toISOString()}
+Escaped Header: ${escapedHeader}
+Escaped Question: ${escapedQuestion}
+Escaped Options: ${escapedOptions}
+Full Message Text:
+${messageText}
+===========================
+`;
+    appendFileSync(debugPath, debugInfo);
 
     const message = await bot.sendMessage(config.chat_id, messageText, {
       parse_mode: 'MarkdownV2',

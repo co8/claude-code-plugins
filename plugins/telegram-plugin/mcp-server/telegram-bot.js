@@ -97,15 +97,9 @@ function loadConfig() {
 function escapeMarkdown(text) {
   if (typeof text !== 'string') return '';
 
-  // Escape special Markdown characters
-  const specialChars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
-  let escaped = text;
-
-  for (const char of specialChars) {
-    escaped = escaped.replace(new RegExp('\\\\' + char, 'g'), '\\\\' + char);
-  }
-
-  return escaped;
+  // Escape special Markdown characters for Telegram MarkdownV2
+  // Need to escape: _ * [ ] ( ) ~ ` > # + - = | { } . !
+  return text.replace(/[_*\[\]()~`>#+=|{}.!-]/g, '\\$&');
 }
 
 // FIX #1: Logging utility - use cached config

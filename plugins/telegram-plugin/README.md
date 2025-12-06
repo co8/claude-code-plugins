@@ -70,11 +70,41 @@ This file stores your Telegram bot credentials and notification preferences.
 **Security Note**: This file is gitignored and should NEVER be committed to version control.
 ```
 
-4. Test connection:
+4. **Enable MCP Server** (Required):
 
-```bash
-/telegram:test
-```
+   The plugin requires an MCP server to communicate with Telegram. After creating the config file:
+
+   **Option A - Auto-discovery** (if supported):
+
+   - Restart Claude Code
+   - The MCP server should be automatically discovered from `.mcp.json`
+
+   **Option B - Manual setup** (if auto-discovery not available):
+
+   - Add to `~/.claude/settings.json`:
+
+     ```json
+     {
+       "mcp": {
+         "telegram-bot": {
+           "command": "node",
+           "args": ["/path/to/telegram-plugin/mcp-server/telegram-bot.js"],
+           "env": {
+             "NODE_ENV": "production"
+           }
+         }
+       }
+     }
+     ```
+
+   - Replace `/path/to/telegram-plugin/` with your actual plugin path
+   - Restart Claude Code
+
+5. Test connection:
+
+   ```bash
+   /telegram:test
+   ```
 
 ## Usage
 

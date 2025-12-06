@@ -57,25 +57,73 @@ Ask user to paste their bot token.
 
 **Note:** Use `jq` for JSON parsing if available, otherwise extract manually using grep/sed.
 
-### Step 3: Install MCP Server Dependencies
+### Step 3: Enable and Verify MCP Server
 
 Before creating the config, ensure the MCP server is ready:
 
-1. Navigate to the MCP server directory:
+1. **Check if MCP server dependencies are installed:**
    ```bash
-   cd $CLAUDE_PLUGIN_ROOT/mcp-server
+   cd ${CLAUDE_PLUGIN_ROOT}/mcp-server && [ -d "node_modules" ] && echo "✓ Dependencies installed" || echo "✗ Dependencies missing"
    ```
 
-2. Install Node.js dependencies:
+2. **If dependencies are missing, install them:**
    ```bash
-   npm install
+   cd ${CLAUDE_PLUGIN_ROOT}/mcp-server && npm install
    ```
 
-3. Verify installation:
-   - Check that `node_modules/` directory exists
-   - Check that key dependencies are installed: `@modelcontextprotocol/sdk`, `node-telegram-bot-api`
+3. **Verify MCP server configuration:**
+   - Confirm `.mcp.json` exists in plugin root
+   - Read and display the MCP server config to user
 
-4. If npm install fails, provide troubleshooting steps
+4. **Test MCP server startup (dry run):**
+   ```bash
+   cd ${CLAUDE_PLUGIN_ROOT}/mcp-server && node telegram-bot.js --test 2>&1 | head -20
+   ```
+   - If server starts without errors: ✓ MCP server is ready
+   - If errors occur: Display error and provide troubleshooting
+
+5. **Enable MCP server for Claude Code:**
+
+   The MCP server is defined in `.mcp.json` and should auto-start with Claude Code.
+
+   **IMPORTANT**: Inform user:
+
+   ```text
+   📋 MCP Server Setup
+
+   The Telegram plugin uses an MCP server that must be enabled in Claude Code.
+
+   ✓ MCP server configuration exists at: ${CLAUDE_PLUGIN_ROOT}/.mcp.json
+
+   To enable the MCP server:
+
+   Option A - Automatic (if Claude Code supports plugin MCP auto-discovery):
+      The MCP server should be automatically discovered and started.
+      Restart Claude Code if you don't see telegram-bot tools available.
+
+   Option B - Manual (if auto-discovery not available):
+      Add this to your Claude Code settings (~/.claude/settings.json):
+
+      "mcp": {
+        "telegram-bot": {
+          "command": "node",
+          "args": ["${CLAUDE_PLUGIN_ROOT}/mcp-server/telegram-bot.js"],
+          "env": {
+            "NODE_ENV": "production"
+          }
+        }
+      }
+
+      Replace ${CLAUDE_PLUGIN_ROOT} with the actual path shown above.
+
+   After enabling, restart Claude Code to activate the MCP server.
+   ```
+
+6. **If npm install fails, provide troubleshooting:**
+   - Check Node.js version: `node --version` (requires v18+)
+   - Check npm version: `npm --version`
+   - Check write permissions in mcp-server directory
+   - Try: `npm cache clean --force && npm install`
 
 ### Step 4: Create Configuration File
 
@@ -117,13 +165,30 @@ Edit this file to customize:
 Run `/telegram:test` to verify your configuration.
 ```
 
-### Step 5: Verify Plugin Components
+### Step 5: Verify Plugin Components and MCP Server Status
 
-1. **Check MCP Server Configuration:**
-   - Verify `.mcp.json` exists in plugin root
-   - Confirm MCP server will auto-start with Claude Code
+1. **Verify MCP Server is Enabled:**
 
-2. **Check Hooks Configuration:**
+   After configuration, check if the MCP server is active:
+
+   ```bash
+   # If using Claude Code CLI with MCP support:
+   claude mcp list 2>/dev/null | grep telegram-bot
+   ```
+
+   If telegram-bot is NOT listed:
+   - Inform user they need to manually enable the MCP server (see Step 3, Option B)
+   - Provide the exact JSON configuration they need to add to settings
+   - Remind them to restart Claude Code after updating settings
+
+   If telegram-bot IS listed:
+   - ✓ MCP server is enabled and ready
+
+2. **Check MCP Server Configuration:**
+   - Read and display `.mcp.json` from plugin root
+   - Show the actual path that will be used: `${CLAUDE_PLUGIN_ROOT}/mcp-server/telegram-bot.js`
+
+3. **Check Hooks Configuration:**
    - Verify `hooks/hooks.json` exists
    - Confirm hooks are configured for:
      - PostToolUse (TodoWrite notifications)
@@ -131,11 +196,11 @@ Run `/telegram:test` to verify your configuration.
      - SessionStart/SessionEnd (session notifications)
      - Notification (smart detection)
 
-3. **Display Setup Summary:**
+4. **Display Setup Summary:**
    - Show configured bot username
    - Show chat ID
    - List enabled notification types
-   - Confirm MCP server is ready
+   - **MCP Server Status**: Enabled/Not Enabled (with instructions if not enabled)
    - Confirm hooks are active
 
 ### Step 6: Test Connection
@@ -214,6 +279,36 @@ Replace YOUR_BOT_TOKEN_HERE and YOUR_CHAT_ID_HERE with your actual credentials.
 - `batch_window_seconds`: Notification batching window (default: 30)
 ```
 
+### Enable MCP Server
+
+**IMPORTANT**: After creating the configuration file, you must enable the MCP server:
+
+1. **Check if MCP server is auto-discovered:**
+   - Restart Claude Code
+   - Check if telegram-bot MCP tools are available
+
+2. **If not auto-discovered, manually enable:**
+
+   Add this to `~/.claude/settings.json` (create if it doesn't exist):
+
+   ```json
+   {
+     "mcp": {
+       "telegram-bot": {
+         "command": "node",
+         "args": ["/full/path/to/telegram-plugin/mcp-server/telegram-bot.js"],
+         "env": {
+           "NODE_ENV": "production"
+         }
+       }
+     }
+   }
+   ```
+
+   Replace `/full/path/to/telegram-plugin/` with the actual plugin installation path.
+
+3. **Restart Claude Code** to activate the MCP server
+
 ### Test Configuration
 
 After setup, run: `/telegram:test`
@@ -234,6 +329,14 @@ After setup, run: `/telegram:test`
 - Ensure ~/.claude/ directory exists
 - Check file permissions allow writing
 - Make sure telegram.local.md is in .gitignore
+
+**MCP server not working:**
+
+- Check Node.js is installed: `node --version` (requires v18+)
+- Verify dependencies: `cd mcp-server && npm install`
+- Test server manually: `node mcp-server/telegram-bot.js`
+- Check Claude Code settings include the MCP server configuration
+- Restart Claude Code after updating settings
 
 ## Next Steps
 

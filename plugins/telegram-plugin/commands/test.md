@@ -1,7 +1,6 @@
 ---
 description: Test Telegram bot connection and configuration
 allowed-tools: [Read, mcp__plugin_telegram-plugin_telegram-bot__send_message]
-model: haiku
 ---
 
 Test Telegram plugin configuration and connectivity.

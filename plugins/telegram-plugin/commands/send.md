@@ -2,7 +2,6 @@
 description: Send a message to Telegram
 argument-hint: <message> [priority]
 allowed-tools: [mcp__plugin_telegram-plugin_telegram-bot__send_message]
-model: haiku
 ---
 
 Send message to Telegram: "$ARGUMENTS"

@@ -1,7 +1,6 @@
 ---
 description: Interactive Telegram bot setup and configuration
 allowed-tools: [Read, Write, Edit, Bash(curl:*), AskUserQuestion]
-model: sonnet
 ---
 
 # Telegram Plugin Configuration

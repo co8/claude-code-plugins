@@ -1,0 +1,9 @@
+{
+  "telegram-bot": {
+    "command": "node",
+    "args": ["${CLAUDE_PLUGIN_ROOT}/mcp-server/telegram-bot.js"],
+    "env": {
+      "NODE_ENV": "production"
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "telegram-plugin",
+  "version": "0.1.0",
+  "description": "Remote interaction with Claude Code via Telegram - receive task updates, approval requests, and control sessions from your phone",
+  "author": {
+    "name": "Enrique",
+    "email": "e@co8.com"
+  },
+  "keywords": [
+    "telegram",
+    "notifications",
+    "remote",
+    "messaging",
+    "automation",
+    "workflow"
+  ],
+  "license": "MIT"
+}

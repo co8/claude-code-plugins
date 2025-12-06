@@ -1,0 +1,27 @@
+{
+  "name": "telegram-mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server for Telegram Bot API integration",
+  "type": "module",
+  "main": "telegram-bot.js",
+  "scripts": {
+    "start": "node telegram-bot.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:verbose": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose",
+    "test:hooks": "bash ../tests/hooks.test.sh"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "js-yaml": "^4.1.1",
+    "node-telegram-bot-api": "^0.66.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@jest/globals": "^30.2.0",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.2.0"
+  }
+}

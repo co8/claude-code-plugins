@@ -1,0 +1,224 @@
+{
+  "name": "telegram-plugin",
+  "displayName": "Claude Code Telegram Bot",
+  "version": "0.1.0",
+  "description": "Remote interaction with Claude Code via Telegram - receive task updates, approval requests, and control sessions from your phone",
+  "longDescription": "Control and monitor Claude Code remotely via Telegram. Receive smart notifications about task completions, errors, session events, and important insights. Respond to Claude's questions via Telegram inline keyboards. Stay connected to your development workflow from anywhere.",
+  "author": {
+    "name": "Enrique R Grullon",
+    "email": "e@co8.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/co8/claude-code-plugins"
+  },
+  "keywords": [
+    "telegram",
+    "notifications",
+    "remote",
+    "messaging",
+    "automation",
+    "workflow",
+    "mobile",
+    "alerts",
+    "approvals"
+  ],
+  "categories": [
+    "notifications",
+    "remote-control",
+    "productivity",
+    "automation"
+  ],
+  "features": [
+    {
+      "title": "Smart Notifications",
+      "description": "Get notified about task completions, errors, session events, and important insights",
+      "icon": "📬"
+    },
+    {
+      "title": "Remote Approvals",
+      "description": "Respond to Claude's questions via Telegram inline keyboards from anywhere",
+      "icon": "✅"
+    },
+    {
+      "title": "Keyword Detection",
+      "description": "Automatically detect suggestions, clarifications, and discoveries in Claude's responses",
+      "icon": "🔔"
+    },
+    {
+      "title": "Batched Messages",
+      "description": "Reduce notification noise with intelligent message batching",
+      "icon": "⚡"
+    },
+    {
+      "title": "Fully Configurable",
+      "description": "Customize notifications, timeouts, and logging preferences to your workflow",
+      "icon": "🎛️"
+    }
+  ],
+  "screenshots": [],
+  "requirements": {
+    "claude_code_version": ">=1.0.0",
+    "node_version": ">=18.0.0"
+  },
+  "prerequisites": [
+    {
+      "name": "Telegram Bot Token",
+      "description": "Create a bot via @BotFather on Telegram",
+      "required": true
+    },
+    {
+      "name": "Chat ID",
+      "description": "Your Telegram user or group chat ID",
+      "required": true
+    },
+    {
+      "name": "Node.js",
+      "description": "Node.js v18+ required for MCP server",
+      "required": true
+    }
+  ],
+  "installation": {
+    "quickStart": "/telegram:configure",
+    "steps": [
+      "Create a Telegram bot with @BotFather",
+      "Get your chat ID from bot messages",
+      "Run /telegram:configure for guided setup",
+      "Test connection with /telegram:test"
+    ]
+  },
+  "commands": [
+    {
+      "name": "/telegram:configure",
+      "description": "Interactive bot setup and configuration wizard"
+    },
+    {
+      "name": "/telegram:send",
+      "description": "Manually send a message to Telegram",
+      "usage": "/telegram:send <message>"
+    },
+    {
+      "name": "/telegram:test",
+      "description": "Verify bot connection and settings"
+    }
+  ],
+  "hooks": [
+    "PreToolUse",
+    "PostToolUse",
+    "SessionStart",
+    "SessionEnd",
+    "Notification"
+  ],
+  "mcp_servers": [
+    {
+      "name": "telegram-bot",
+      "description": "Handles Telegram Bot API communication, polling, and message batching",
+      "path": "mcp-server/telegram-bot.js"
+    }
+  ],
+  "configuration": {
+    "file": ".claude/telegram.local.md",
+    "format": "YAML frontmatter",
+    "settings": [
+      {
+        "key": "bot_token",
+        "type": "string",
+        "required": true,
+        "description": "Your Telegram bot token from @BotFather"
+      },
+      {
+        "key": "chat_id",
+        "type": "string",
+        "required": true,
+        "description": "Your Telegram chat ID"
+      },
+      {
+        "key": "timeout_seconds",
+        "type": "number",
+        "default": 600,
+        "description": "How long to wait for approval responses (seconds)"
+      },
+      {
+        "key": "notifications.todo_completions",
+        "type": "boolean",
+        "default": true,
+        "description": "Notify when tasks complete"
+      },
+      {
+        "key": "notifications.errors",
+        "type": "boolean",
+        "default": true,
+        "description": "Notify on errors/warnings"
+      },
+      {
+        "key": "notifications.session_events",
+        "type": "boolean",
+        "default": true,
+        "description": "Notify on session start/end"
+      },
+      {
+        "key": "notifications.smart_detection",
+        "type": "boolean",
+        "default": true,
+        "description": "Detect insights/suggestions via keywords"
+      },
+      {
+        "key": "logging_level",
+        "type": "string",
+        "enum": [
+          "all",
+          "errors",
+          "none"
+        ],
+        "default": "errors",
+        "description": "Message logging verbosity"
+      },
+      {
+        "key": "batch_window_seconds",
+        "type": "number",
+        "default": 30,
+        "description": "Time window to batch similar notifications"
+      }
+    ]
+  },
+  "security": {
+    "notes": [
+      "Never commit .claude/telegram.local.md to version control",
+      "Bot token is like a password - keep it secret",
+      "Chat ID should be private to prevent spam",
+      "All Telegram API calls use HTTPS/TLS",
+      "Message logs stay local on your machine"
+    ]
+  },
+  "documentation": {
+    "readme": "README.md",
+    "troubleshooting": true,
+    "examples": true
+  },
+  "tags": [
+    "telegram",
+    "bot",
+    "remote-control",
+    "notifications",
+    "mobile",
+    "workflow",
+    "automation",
+    "approvals",
+    "messaging"
+  ],
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "tested_with": [
+      "claude-code@latest"
+    ]
+  },
+  "support": {
+    "issues": "https://github.com/anthropics/claude-code/issues",
+    "documentation": "https://claude.ai/claude-code"
+  }
+}

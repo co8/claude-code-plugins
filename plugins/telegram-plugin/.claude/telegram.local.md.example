@@ -1,0 +1,174 @@
+---
+bot_token: "YOUR_BOT_TOKEN_HERE"
+chat_id: "YOUR_CHAT_ID_HERE"
+timeout_seconds: 600
+notifications:
+  todo_completions: true
+  errors: true
+  session_events: true
+  smart_detection: true
+smart_keywords: ["suggest", "recommend", "discovered", "insight", "clarify", "important", "note", "warning", "critical", "found", "identified"]
+logging_level: "errors"
+batch_window_seconds: 30
+---
+
+# Telegram Plugin Configuration
+
+This file configures your Telegram bot for Claude Code integration.
+
+## Setup Instructions
+
+1. **Create Bot with @BotFather:**
+   - Open Telegram and search for @BotFather
+   - Send `/newbot` and follow prompts
+   - Copy the bot token
+
+2. **Get Your Chat ID:**
+   - Send a message to your bot
+   - Visit: `https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates`
+   - Find `"chat":{"id":YOUR_CHAT_ID}`
+   - Copy the numeric ID
+
+3. **Update This File and Save Configuration:**
+   - Replace `YOUR_BOT_TOKEN_HERE` with your bot token
+   - Replace `YOUR_CHAT_ID_HERE` with your chat ID
+
+   **Choose one:**
+   - **Global Setup** (single bot for all projects): Copy to `~/.claude/telegram.local.md`
+   - **Project-Specific Setup** (different bot per project): Copy to `$PROJECT_ROOT/.claude/telegram.local.md`
+
+4. **Test:**
+   - Run `/telegram:test` to verify configuration
+
+## Configuration File Locations
+
+### Global Configuration (Default)
+
+Save this file as `~/.claude/telegram.local.md` to use the same Telegram bot for all projects.
+
+### Project-Specific Configuration
+
+To use different bots for different projects, save this file as:
+```
+$PROJECT_ROOT/.claude/telegram.local.md
+```
+
+Example:
+- `/path/to/project1/.claude/telegram.local.md` - Bot A credentials
+- `/path/to/project2/.claude/telegram.local.md` - Bot B credentials
+- `~/.claude/telegram.local.md` - Fallback bot for projects without project-specific config
+
+The plugin checks for project-specific config first (when `CLAUDE_PROJECT_DIR` environment variable is set), then falls back to the global config if not found.
+
+## Configuration Reference
+
+### Required Settings
+
+- **bot_token**: Your Telegram bot token from @BotFather
+- **chat_id**: Your Telegram user or group chat ID
+
+### Optional Settings
+
+- **timeout_seconds** (default: 600): How long to wait for approval responses before proceeding
+- **logging_level** ("all" | "errors" | "none"): Message logging level
+- **batch_window_seconds** (default: 30): Time window to batch similar notifications
+
+### Notification Types
+
+Enable/disable notification categories:
+
+- **todo_completions**: Get notified when Claude marks tasks as completed
+- **errors**: Receive alerts for errors and warnings
+- **session_events**: Know when Claude Code sessions start/stop
+- **smart_detection**: Auto-detect important messages based on keywords
+
+### Smart Keywords
+
+Keywords that trigger smart notifications when detected in Claude's messages:
+
+Default: `["suggest", "recommend", "discovered", "insight", "clarify", "important", "note", "warning", "critical", "found", "identified"]`
+
+Customize this array to match your preferred notification triggers.
+
+## Security Notes
+
+- **NEVER commit this file to version control**
+- The bot token is sensitive - treat it like a password
+- Keep your chat ID private to prevent spam
+- Add `*.local.md` to your `.gitignore`
+
+## Examples
+
+### Minimal Configuration
+
+```yaml
+---
+bot_token: "123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
+chat_id: "987654321"
+---
+```
+
+### High-Activity Configuration
+
+For busy sessions with many tasks:
+
+```yaml
+---
+bot_token: "your-token"
+chat_id: "your-chat-id"
+timeout_seconds: 300
+notifications:
+  todo_completions: true
+  errors: true
+  session_events: false
+  smart_detection: true
+smart_keywords: ["critical", "error", "important", "discovered"]
+logging_level: "none"
+batch_window_seconds: 60
+---
+```
+
+### Silent Configuration
+
+Minimal notifications, errors only:
+
+```yaml
+---
+bot_token: "your-token"
+chat_id: "your-chat-id"
+timeout_seconds: 600
+notifications:
+  todo_completions: false
+  errors: true
+  session_events: false
+  smart_detection: false
+logging_level: "errors"
+batch_window_seconds: 30
+---
+```
+
+## Troubleshooting
+
+**Bot not responding:**
+- Verify token is correct (no extra spaces)
+- Check bot is started (send `/start` to bot)
+- Confirm chat ID is correct
+- Test with `/telegram:test`
+
+**Too many notifications:**
+- Increase `batch_window_seconds` to 60 or 90
+- Disable `session_events`
+- Reduce `smart_keywords` array
+- Disable `todo_completions` for rapid iteration
+
+**Missing notifications:**
+- Check enabled notification types
+- Verify `smart_keywords` include relevant terms
+- Test with `/telegram:send "test message"`
+- Review logs at `telegram-plugin/telegram.log`
+
+## Support
+
+- Plugin documentation: See README.md in plugin directory
+- Telegram Bot API: https://core.telegram.org/bots/api
+- Claude Code docs: https://docs.claude.com

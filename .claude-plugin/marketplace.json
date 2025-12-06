@@ -1,43 +1,36 @@
 {
   "name": "co8-plugins",
-  "displayName": "co8 Claude Code Plugins",
-  "description": "Curated collection of Claude Code plugins for enhanced productivity and workflow automation",
-  "author": {
+  "owner": {
     "name": "Enrique R Grullon",
-    "email": "e@co8.com",
-    "url": "https://co8.com"
+    "email": "e@co8.com"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/co8/claude-code-plugins"
+  "metadata": {
+    "description": "Curated collection of Claude Code plugins for enhanced productivity and workflow automation",
+    "version": "1.0.0",
+    "homepage": "https://github.com/co8/claude-code-plugins",
+    "repository": "https://github.com/co8/claude-code-plugins"
   },
-  "homepage": "https://github.com/co8/claude-code-plugins",
-  "license": "MIT",
-  "categories": [
-    "productivity",
-    "automation",
-    "notifications",
-    "remote-control"
-  ],
   "plugins": [
     {
       "name": "telegram-plugin",
-      "path": "plugins/telegram-plugin",
-      "version": "0.1.0",
-      "displayName": "Claude Code Telegram Bot",
+      "source": "./plugins/telegram-plugin",
       "description": "Remote interaction with Claude Code via Telegram - receive task updates, approval requests, and control sessions from your phone",
-      "featured": true
+      "version": "0.1.0",
+      "author": {
+        "name": "Enrique R Grullon",
+        "email": "e@co8.com"
+      },
+      "license": "MIT",
+      "keywords": [
+        "telegram",
+        "notifications",
+        "remote",
+        "messaging",
+        "automation",
+        "workflow"
+      ],
+      "repository": "https://github.com/co8/claude-code-plugins",
+      "homepage": "https://github.com/co8/claude-code-plugins/tree/main/plugins/telegram-plugin"
     }
-  ],
-  "maintainers": [
-    {
-      "name": "Enrique R Grullon",
-      "email": "e@co8.com",
-      "github": "co8"
-    }
-  ],
-  "support": {
-    "issues": "https://github.com/co8/claude-code-plugins/issues",
-    "documentation": "https://github.com/co8/claude-code-plugins#readme"
-  }
+  ]
 }

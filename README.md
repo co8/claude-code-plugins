@@ -100,7 +100,7 @@ This marketplace repository is licensed under MIT License. Individual plugins ma
 
 - [Claude Code Documentation](https://claude.ai/claude-code)
 - [Report Issues](https://github.com/co8/claude-code-plugins/issues)
-- [CO8 Website](https://co8.com)
+- [co8 Website](https://co8.com)
 
 ## 📬 Contact
 
@@ -108,4 +108,4 @@ This marketplace repository is licensed under MIT License. Individual plugins ma
 
 ---
 
-Made with ❤️ by CO8
+Made with ❤️ by co8.com

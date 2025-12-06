@@ -1,6 +1,6 @@
 {
   "name": "co8-plugins",
-  "displayName": "CO8 Claude Code Plugins",
+  "displayName": "co8 Claude Code Plugins",
   "description": "Curated collection of Claude Code plugins for enhanced productivity and workflow automation",
   "author": {
     "name": "Enrique R Grullon",

@@ -273,18 +273,30 @@ setInterval(cleanupOldApprovals, 60 * 60 * 1000);
 let bot = null;
 let config = null;
 let batcher = null;
+let botInfo = null;
 
-function initBot() {
+async function initBot() {
   config = loadConfig();
   bot = new TelegramBot(config.bot_token, { polling: false });
   batcher = new MessageBatcher(config.batch_window_seconds);
 
-  log('info', 'Telegram bot initialized', { chat_id: config.chat_id, config_path: CONFIG_PATH });
+  // Get bot info to identify own messages
+  try {
+    botInfo = await bot.getMe();
+    log('info', 'Telegram bot initialized', {
+      chat_id: config.chat_id,
+      config_path: CONFIG_PATH,
+      bot_id: botInfo.id,
+      bot_username: botInfo.username
+    });
+  } catch (error) {
+    log('error', 'Failed to get bot info', { error: error.message });
+  }
 }
 
 // Send message to Telegram with retry logic
 async function sendMessage(text, priority = 'normal', options = {}, retries = 3) {
-  if (!bot) initBot();
+  if (!bot) await initBot();
 
   let lastError;
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -296,10 +308,13 @@ async function sendMessage(text, priority = 'normal', options = {}, retries = 3)
 
       log('info', 'Message sent', { message_id: message.message_id, priority, attempt });
 
-      // Add robot icon to confirm receipt
-      await bot.sendMessage(config.chat_id, '🤖', {
-        reply_to_message_id: message.message_id
-      });
+      // Add robot icon reaction to indicate receipt
+      try {
+        await bot.setMessageReaction(config.chat_id, message.message_id, [{ type: 'emoji', emoji: '🤖' }]);
+      } catch (reactionError) {
+        // Reaction might not be supported, ignore error
+        log('info', 'Could not add reaction', { error: reactionError.message });
+      }
 
       return { success: true, message_id: message.message_id };
     } catch (error) {
@@ -319,7 +334,7 @@ async function sendMessage(text, priority = 'normal', options = {}, retries = 3)
 
 // Send approval request with inline keyboard
 async function sendApprovalRequest(question, options, header) {
-  if (!bot) initBot();
+  if (!bot) await initBot();
 
   try {
     // Create inline keyboard with options
@@ -377,7 +392,7 @@ async function sendApprovalRequest(question, options, header) {
 
 // FIX #2: Poll for approval response with improved cleanup
 async function pollResponse(approvalId, timeoutSeconds = 600) {
-  if (!bot) initBot();
+  if (!bot) await initBot();
 
   const approval = pendingApprovals.get(approvalId);
   if (!approval) {
@@ -462,6 +477,11 @@ async function pollResponse(approvalId, timeoutSeconds = 600) {
 
             // Wait for text message
             textHandler = (msg) => {
+              // Ignore messages from the bot itself
+              if (botInfo && msg.from && msg.from.id === botInfo.id) {
+                return;
+              }
+
               if (msg.chat.id.toString() === config.chat_id && msg.text) {
                 cleanup();
 
@@ -528,7 +548,7 @@ async function pollResponse(approvalId, timeoutSeconds = 600) {
 
 // Batch and send notifications
 async function batchNotifications(messages) {
-  if (!bot) initBot();
+  if (!bot) await initBot();
 
   for (const msg of messages) {
     batcher.add(msg.text, msg.priority || 'normal');

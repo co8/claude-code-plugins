@@ -1,0 +1,1 @@
+- add features only  to the development files of telegram-plugin, not the installed version. then plugin request update

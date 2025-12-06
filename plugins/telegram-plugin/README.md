@@ -1,13 +1,6 @@
 # Telegram Plugin for Claude Code
 
-![Version](https://img.shields.io/badge/version-0.1.6-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
-![Claude Code](https://img.shields.io/badge/Claude_Code-Plugin-8B5CF6?logo=anthropic&logoColor=white)
-![Claude Hooks](https://img.shields.io/badge/Claude_Hooks-Enabled-7C3AED?logo=anthropic&logoColor=white)
-![Telegram Bot API](https://img.shields.io/badge/Telegram%20Bot%20API-7.0-26A5E4?logo=telegram)
-![MCP](https://img.shields.io/badge/MCP-Server-purple)
-![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?logo=javascript&logoColor=black)
+![Version](https://img.shields.io/badge/version-0.1.7-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen) ![Claude Code](https://img.shields.io/badge/Claude_Code-Plugin-8B5CF6?logo=anthropic&logoColor=white) ![Claude Hooks](https://img.shields.io/badge/Claude_Hooks-Enabled-7C3AED?logo=anthropic&logoColor=white) ![Telegram Bot API](https://img.shields.io/badge/Telegram%20Bot%20API-7.0-26A5E4?logo=telegram) ![MCP](https://img.shields.io/badge/MCP-Server-purple) ![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?logo=javascript&logoColor=black)
 
 Control and monitor Claude Code remotely via Telegram. Receive task updates, respond to approval requests, and stay connected to your development workflow from anywhere.
 
@@ -126,7 +119,7 @@ Follow the guided setup to:
 5. Test connection:
 
    ```bash
-   /telegram-plugin:test
+   /telegram:test
    ```
 
 ## Usage
@@ -150,6 +143,7 @@ The plugin automatically sends notifications for:
 ### Approval Requests
 
 When Claude uses `AskUserQuestion`, you'll receive:
+
 - The question in Telegram
 - Inline keyboard buttons for each option
 - "Other" button for custom text responses
@@ -162,6 +156,7 @@ When Claude uses `AskUserQuestion`, you'll receive:
 The plugin automatically discovers configuration files in this priority order:
 
 1. **Project-Specific Config** (if `CLAUDE_PROJECT_DIR` environment variable is set)
+
    - Path: `$PROJECT_ROOT/.claude/telegram.local.md`
    - Use case: Different bots per project, project-specific notification settings
 
@@ -176,7 +171,7 @@ When Claude Code runs, it automatically sets `CLAUDE_PROJECT_DIR` to the project
 Edit `.claude/telegram.local.md` to customize:
 
 | Setting | Type | Default | Description |
-|---------|------|---------|-------------|
+| --- | --- | --- | --- |
 | `bot_token` | string | required | Your Telegram bot token from @BotFather |
 | `chat_id` | string | required | Your Telegram chat ID |
 | `timeout_seconds` | number | 600 | How long to wait for approval responses (seconds) |
@@ -207,6 +202,7 @@ Your Response → Telegram → MCP Polling → Claude Continues
 ### Rate Limiting
 
 The plugin intelligently batches notifications within the configured window to:
+
 - Reduce Telegram API calls
 - Minimize notification noise
 - Stay within rate limits (30 messages/second to same chat)

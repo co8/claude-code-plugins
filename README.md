@@ -1,14 +1,12 @@
 # Claude Code Plugins by co8
 
-![Plugins](https://img.shields.io/badge/plugins-1-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Maintained](https://img.shields.io/badge/maintained-yes-brightgreen)
+![Plugins](https://img.shields.io/badge/plugins-1-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![Maintained](https://img.shields.io/badge/maintained-yes-brightgreen)
 
 A curated collection of Claude Code plugins for enhanced productivity and workflow automation.
 
 ## 📦 Available Plugins
 
-### [Telegram Plugin](./plugins/telegram-plugin) ![Version](https://img.shields.io/badge/version-0.1.6-blue)
+### [Telegram Plugin](./plugins/telegram-plugin) ![Version](https://img.shields.io/badge/version-0.1.7-blue)
 
 **Remote interaction with Claude Code via Telegram**
 

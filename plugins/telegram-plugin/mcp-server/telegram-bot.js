@@ -782,7 +782,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case 'send_message': {
         validateSendMessage(request.params.arguments);
         const { text, priority = 'normal' } = request.params.arguments;
-        const result = await sendMessage(text, priority);
+        // Escape markdown special characters for MarkdownV2 format
+        const result = await sendMessage(escapeMarkdown(text), priority);
         return {
           content: [
             {

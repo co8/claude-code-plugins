@@ -646,7 +646,9 @@ async function batchNotifications(messages) {
   if (!bot) await initBot();
 
   for (const msg of messages) {
-    batcher.add(msg.text, msg.priority || "normal");
+    // Escape each message text before batching
+    const escapedText = escapeMarkdown(msg.text);
+    batcher.add(escapedText, msg.priority || "normal");
   }
 
   // Flush immediately if any high priority
@@ -654,6 +656,7 @@ async function batchNotifications(messages) {
   if (hasHighPriority) {
     const combined = batcher.flush();
     if (combined) {
+      // Combined text is already escaped, so send directly
       await sendMessage(combined, "high");
     }
   }
@@ -880,7 +883,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "send_message": {
         validateSendMessage(request.params.arguments);
         const { text, priority = "normal" } = request.params.arguments;
-        const result = await sendMessage(text, priority);
+        // Escape markdown special characters for Telegram MarkdownV2
+        const escapedText = escapeMarkdown(text);
+        const result = await sendMessage(escapedText, priority);
         return {
           content: [
             {

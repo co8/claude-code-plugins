@@ -1,6 +1,6 @@
 {
   "name": "telegram-plugin",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Remote interaction with Claude Code via Telegram - receive task updates, approval requests, and control sessions from your phone",
   "author": {
     "name": "Enrique",

@@ -15,12 +15,11 @@ fi
 input=$(cat)
 
 # Load configuration
-CONFIG_FILE=$(get_config_path)
-if [ $? -ne 0 ]; then
+CONFIG_FILE=$(get_config_path) || {
   # Config not found, allow normal flow
   echo '{"continue": true, "suppressOutput": true}'
   exit 0
-fi
+}
 
 # Extract tool input (AskUserQuestion parameters)
 tool_input=$(echo "$input" | jq -r '.tool_input // "{}"' 2>/dev/null)

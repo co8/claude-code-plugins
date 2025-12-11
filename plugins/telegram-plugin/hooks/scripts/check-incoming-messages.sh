@@ -15,11 +15,10 @@ fi
 input=$(cat)
 
 # Load configuration
-CONFIG_FILE=$(get_config_path)
-if [ $? -ne 0 ]; then
+CONFIG_FILE=$(get_config_path) || {
   echo '{"continue": true, "suppressOutput": true}'
   exit 0
-fi
+}
 
 # Check if bidirectional communication is enabled
 bidirectional=$(get_bool_config "$CONFIG_FILE" "bidirectional_communication" "false")

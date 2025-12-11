@@ -15,12 +15,11 @@ fi
 input=$(cat)
 
 # Load configuration
-CONFIG_FILE=$(get_config_path)
-if [ $? -ne 0 ]; then
+CONFIG_FILE=$(get_config_path) || {
   # Config not found, skip silently
   echo '{"continue": true, "suppressOutput": true}'
   exit 0
-fi
+}
 
 # Extract notification settings
 todo_completions_enabled=$(get_bool_config "$CONFIG_FILE" "todo_completions" "false")

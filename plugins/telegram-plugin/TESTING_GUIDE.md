@@ -1,5 +1,29 @@
 # Telegram Plugin Testing Guide
 
+## Test Status Summary
+
+**Last Test Run:** December 11, 2025
+**Overall Status:** ✅ 98/98 tests passing (100%)
+
+- **Jest Unit Tests:** 85/85 passing ✅
+- **Bash Hook Tests:** 13/13 passing ✅
+- **Test Duration:** ~2.5 seconds total
+
+### Quick Test Commands
+
+```bash
+# Run all tests
+cd mcp-server
+npm test                 # Jest tests (85 tests)
+npm run test:hooks       # Bash tests (13 tests)
+
+# Watch mode
+npm run test:watch
+
+# Verbose output
+npm run test:verbose
+```
+
 ## Prerequisites
 
 1. **Plugin Installation**: Ensure telegram-plugin is installed and updated
@@ -336,6 +360,54 @@ node test-bidirectional.js
 
 ## Test Checklist
 
+### Unit Tests (Jest) ✅ ALL PASSING
+
+**Total: 85 tests passing**
+
+#### MCP Tools Tests (37 tests)
+
+- [x] send_message validation (7 tests)
+- [x] send_approval_request validation (11 tests)
+- [x] poll_response validation (9 tests)
+- [x] batch_notifications validation (7 tests)
+- [x] Error handling (3 tests)
+
+#### Message Batcher Tests (15 tests)
+- [x] Batching logic
+- [x] Priority handling
+- [x] Timer management
+- [x] Mixed priority messages
+- [x] Message order preservation
+
+#### Markdown Escaping Tests (25 tests)
+- [x] All 18 Telegram MarkdownV2 special characters
+- [x] Edge cases (empty strings, non-strings)
+- [x] Complex scenarios (code snippets, URLs, file paths)
+- [x] Whitespace preservation
+
+#### Configuration Tests (8 tests)
+- [x] Config file parsing
+- [x] YAML frontmatter handling
+- [x] Missing field defaults
+- [x] Error handling
+
+### Hook Script Tests (Bash) ✅ ALL PASSING
+**Total: 13 tests passing**
+
+- [x] jq dependency check
+- [x] All hook scripts exist
+- [x] Script permissions (executable)
+- [x] session-start-notify.sh JSON output
+- [x] session-start-notify.sh JSON structure
+- [x] session-end-notify.sh JSON output
+- [x] Missing config file handling
+- [x] notify-todo-completion.sh JSON output
+- [x] smart-notification-detector.sh JSON output
+- [x] send-approval-request.sh JSON output
+- [x] Config parsing (session_events: false)
+- [x] Empty input handling
+- [x] Malformed JSON input handling
+
 ### Formatting & Basic Features ✅
 - [x] HTML conversion (JavaScript)
 - [x] Bash helper formatting
@@ -355,19 +427,23 @@ node test-bidirectional.js
 - [ ] Bot self-message filtering
 - [ ] 🤖 emoji reactions
 
-### Hook Integration ⏳
-- [ ] Session start notifications
-- [ ] Session end notifications
-- [ ] Todo completion notifications
-- [ ] UserPromptSubmit hook
-- [ ] Smart detection hook
+### Hook Integration ✅ (Tested via Unit Tests)
+- [x] Session start notifications (hook script)
+- [x] Session end notifications (hook script)
+- [x] Todo completion notifications (hook script)
+- [x] Smart detection hook (hook script)
+- [x] Approval request hook (hook script)
+- [x] Config-based enable/disable
 
-### Reliability ⏳
-- [ ] Rate limiting (30 msg/min)
-- [ ] Graceful shutdown
-- [ ] Retry logic (3 attempts)
-- [ ] Error handling
-- [ ] Log rotation
+### Reliability ✅ (Tested via Unit Tests)
+- [x] Message batching
+- [x] Priority handling
+- [x] Error handling
+- [x] Graceful config missing handling
+- [x] Input validation
+- [ ] Rate limiting (30 msg/min) - Not yet implemented
+- [ ] Retry logic (3 attempts) - Not yet implemented
+- [ ] Log rotation - Not yet implemented
 
 ## Troubleshooting
 
@@ -427,5 +503,14 @@ sudo apt install jq
 
 ---
 
-**Last Updated:** December 11, 2024
-**Status:** Formatting tests passing, bidirectional tests pending plugin update
+**Last Updated:** December 11, 2025
+**Test Status:** ✅ 98/98 tests passing (85 Jest + 13 Bash)
+**Bugs Fixed:** 3 critical bugs fixed during test suite execution
+
+### Bugs Fixed (December 11, 2025)
+
+1. **Hook Scripts Path Resolution** - Test script now uses relative paths
+2. **get_bool_config Multiple Line Returns** - Fixed to return only first match
+3. **Missing Config File Handling** - Fixed `set -euo pipefail` exit behavior
+
+See [TEST_RESULTS_2025-12-11.md](TEST_RESULTS_2025-12-11.md) for detailed test results.

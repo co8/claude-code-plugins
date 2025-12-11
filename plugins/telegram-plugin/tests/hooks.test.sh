@@ -15,8 +15,9 @@ TESTS_RUN=0
 TESTS_PASSED=0
 TESTS_FAILED=0
 
-# Hook scripts directory
-HOOKS_DIR="$HOME/.claude/plugins/telegram-plugin/hooks/scripts"
+# Hook scripts directory - determine from script location
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HOOKS_DIR="$(cd "$SCRIPT_DIR/../hooks/scripts" && pwd)"
 
 # Temporary config file for testing
 TEST_CONFIG="/tmp/telegram-test-config.md"

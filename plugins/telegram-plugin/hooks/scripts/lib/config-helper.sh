@@ -50,7 +50,7 @@ get_bool_config() {
 
   # Parse YAML using grep (basic parser for simple structure)
   local value
-  value=$(grep -A 10 "notifications:" "$config_file" 2>/dev/null | grep "${key_path}:" | grep -o "true\|false" 2>/dev/null || echo "$default")
+  value=$(grep -A 10 "notifications:" "$config_file" 2>/dev/null | grep "${key_path}:" | head -n 1 | grep -o "true\|false" 2>/dev/null || echo "$default")
   echo "$value"
 }
 

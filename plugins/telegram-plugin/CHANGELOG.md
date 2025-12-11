@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.2.3] - 2024-12-11
+
+### Fixed
+
+- **Enhanced Markdown Formatting** 🎨
+  - Added support for double asterisk bold: `**text**` → **text**
+  - Added support for double underscore italic: `__text__` → _italic_
+  - Improved `markdownToHTML()` regex patterns to handle both single and double markers
+  - Processing order optimized: code first, then bold, then italic (prevents conflicts)
+  - All mixed formatting combinations now work correctly
+
 ## [0.2.2] - 2024-12-11
 
 ### Fixed

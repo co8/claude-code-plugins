@@ -222,14 +222,18 @@ function markdownToHTML(text, options = { preserveFormatting: false }) {
 
   if (options.preserveFormatting) {
     // Convert Markdown syntax to HTML tags
-    // Bold: *text* -> <b>text</b>
-    result = result.replace(/\*([^*]+)\*/g, "<b>$1</b>");
-
-    // Italic: _text_ -> <i>text</i>
-    result = result.replace(/_([^_]+)_/g, "<i>$1</i>");
+    // Process in order: code first (to protect from other replacements), then bold, then italic
 
     // Code: `text` -> <code>text</code>
     result = result.replace(/`([^`]+)`/g, "<code>$1</code>");
+
+    // Bold: **text** or *text* -> <b>text</b>
+    result = result.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");  // **bold** (double asterisk)
+    result = result.replace(/\*(.+?)\*/g, "<b>$1</b>");       // *bold* (single asterisk)
+
+    // Italic: __text__ or _text_ -> <i>text</i>
+    result = result.replace(/__(.+?)__/g, "<i>$1</i>");       // __italic__ (double underscore)
+    result = result.replace(/_(.+?)_/g, "<i>$1</i>");          // _italic_ (single underscore)
   }
 
   return result;

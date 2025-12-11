@@ -578,13 +578,24 @@ async function sendApprovalRequest(question, options, header) {
   if (!bot) await initBot();
 
   try {
-    // Create inline keyboard with options
-    const keyboard = options.map((opt, idx) => [
-      {
-        text: opt.label,
-        callback_data: JSON.stringify({ idx, label: opt.label }),
-      },
-    ]);
+    // Create inline keyboard with options in 2 columns
+    const keyboard = [];
+    for (let i = 0; i < options.length; i += 2) {
+      const row = [];
+      // First button in row
+      row.push({
+        text: options[i].label,
+        callback_data: JSON.stringify({ idx: i, label: options[i].label }),
+      });
+      // Second button in row (if exists)
+      if (i + 1 < options.length) {
+        row.push({
+          text: options[i + 1].label,
+          callback_data: JSON.stringify({ idx: i + 1, label: options[i + 1].label }),
+        });
+      }
+      keyboard.push(row);
+    }
 
     // Add "Other" button for custom input
     keyboard.push([

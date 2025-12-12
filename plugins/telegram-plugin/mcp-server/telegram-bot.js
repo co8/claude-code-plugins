@@ -58,6 +58,7 @@ function getConfigPath() {
 const CONFIG_PATH = getConfigPath();
 const LOG_PATH = join(dirname(__dirname), "telegram.log");
 const AFK_STATE_PATH = join(dirname(__dirname), ".afk-mode.state");
+const PENDING_COUNT_PATH = join(dirname(__dirname), ".pending-messages-count");
 const MAX_LOG_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_LOG_FILES = 3;
 
@@ -446,6 +447,16 @@ function formatDuration(milliseconds) {
   }
 }
 
+// Update pending messages count file for hooks to read
+function updatePendingCount() {
+  try {
+    const count = commandQueue.length;
+    writeFileSync(PENDING_COUNT_PATH, count.toString(), "utf-8");
+  } catch (error) {
+    log("error", "Failed to update pending count file", { error: error.message });
+  }
+}
+
 // FIX #3: Periodic cleanup for pendingApprovals
 function cleanupOldApprovals() {
   const now = Date.now();
@@ -498,6 +509,9 @@ async function initBot() {
   if (isAfkMode) {
     log("info", "Restored AFK mode from previous session");
   }
+
+  // Initialize pending count file
+  updatePendingCount();
 
   // Get bot info to identify own messages
   try {
@@ -556,6 +570,7 @@ async function startMessageListener() {
         };
 
         commandQueue.push(command);
+        updatePendingCount(); // Update count for hooks
         log("info", "Command received", {
           command: msg.text.substring(0, 50),
           from: command.from,
@@ -603,6 +618,7 @@ async function stopMessageListener() {
     bot.removeAllListeners("message");
     isListeningForCommands = false;
     commandQueue.length = 0; // Clear queue
+    updatePendingCount(); // Update count for hooks
 
     log("info", "Message listener stopped");
     return { success: true, listening: false };
@@ -615,6 +631,7 @@ async function stopMessageListener() {
 // Get pending commands from queue
 function getPendingCommands(limit = 10) {
   const commands = commandQueue.splice(0, limit);
+  updatePendingCount(); // Update count for hooks after removing commands
   log("info", "Retrieved pending commands", { count: commands.length });
   return {
     commands,
@@ -1166,7 +1183,7 @@ function validateBatchNotifications(args) {
 const server = new Server(
   {
     name: "telegram-bot",
-    version: "0.2.12",
+    version: "0.2.13",
   },
   {
     capabilities: {

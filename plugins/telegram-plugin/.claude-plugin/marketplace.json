@@ -1,7 +1,7 @@
 {
   "name": "telegram-plugin",
   "displayName": "Claude Code Telegram Bot",
-  "version": "0.2.12",
+  "version": "0.2.13",
   "description": "Remote interaction with Claude Code via Telegram - receive task updates, approval requests, and control sessions from your phone",
   "longDescription": "Control and monitor Claude Code remotely via Telegram. Receive smart notifications about task completions, errors, session events, and important insights. Respond to Claude's questions via Telegram inline keyboards. Stay connected to your development workflow from anywhere.",
   "author": {

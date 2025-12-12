@@ -28,11 +28,12 @@ if [ "$bidirectional" != "true" ]; then
   exit 0
 fi
 
-# Suggest Claude check for incoming messages periodically
+# Instruct Claude to automatically check for pending Telegram messages and respond
+# This ensures Claude proactively processes incoming messages without manual prompting
 echo "{
   \"continue\": true,
   \"suppressOutput\": false,
-  \"systemMessage\": \"[Telegram Plugin] 📬 Consider checking for incoming Telegram messages using get_pending_commands MCP tool. Users may have sent commands or requests via Telegram.\"
+  \"systemMessage\": \"IMPORTANT: Before responding to the user, first check for any incoming Telegram messages by calling the get_pending_commands MCP tool. If there are pending messages, read them and send appropriate responses back to Telegram using the send_message MCP tool. Then proceed with the user's current request.\"
 }"
 
 exit 0

@@ -48,9 +48,20 @@ get_bool_config() {
     return
   fi
 
-  # Parse YAML using grep (basic parser for simple structure)
+  # First try to find it at root level
   local value
-  value=$(grep -A 10 "notifications:" "$config_file" 2>/dev/null | grep "${key_path}:" | head -n 1 | grep -o "true\|false" 2>/dev/null || echo "$default")
+  value=$(grep "^${key_path}:" "$config_file" 2>/dev/null | head -n 1 | grep -o "true\|false" 2>/dev/null)
+
+  # If not found at root, try under notifications:
+  if [ -z "$value" ]; then
+    value=$(grep -A 10 "notifications:" "$config_file" 2>/dev/null | grep "${key_path}:" | head -n 1 | grep -o "true\|false" 2>/dev/null)
+  fi
+
+  # If still not found, use default
+  if [ -z "$value" ]; then
+    value="$default"
+  fi
+
   echo "$value"
 }
 

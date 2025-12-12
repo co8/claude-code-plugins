@@ -223,41 +223,66 @@ function markdownToHTML(text, options = { preserveFormatting: false }) {
     .replace(/>/g, "&gt;");
 
   if (options.preserveFormatting) {
-    // Convert Markdown syntax to HTML tags
-    // Process in order: links first (to protect URLs), then code blocks, then inline code,
-    // then format markers (longer patterns before shorter ones)
+    // Use placeholder approach to handle nested formatting correctly
+    const placeholders = [];
+    let placeholderIndex = 0;
 
-    // Links: [text](url) -> <a href="url">text</a>
-    result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    // Helper to create placeholder
+    const createPlaceholder = (html) => {
+      const id = `__PLACEHOLDER_${placeholderIndex++}__`;
+      placeholders.push({ id, html });
+      return id;
+    };
 
-    // Code blocks: ```language\ncode``` or ```code``` -> <pre><code>code</code></pre>
-    // Handle optional language identifier and multiline content
-    result = result.replace(/```(\w+)?[\r\n]+([\s\S]*?)```/g, (match, lang, code) => {
-      if (lang) {
-        return `<pre><code class="language-${lang}">${code}</code></pre>`;
+    // Helper to restore placeholders
+    const restorePlaceholders = (text) => {
+      let restored = text;
+      // Restore in reverse order to handle nested placeholders
+      for (let i = placeholders.length - 1; i >= 0; i--) {
+        restored = restored.replace(placeholders[i].id, placeholders[i].html);
       }
-      return `<pre><code>${code}</code></pre>`;
+      return restored;
+    };
+
+    // 1. Protect code blocks first (they should not be processed further)
+    result = result.replace(/```(\w+)?[\r\n]+([\s\S]*?)```/g, (match, lang, code) => {
+      const html = lang
+        ? `<pre><code class="language-${lang}">${code}</code></pre>`
+        : `<pre><code>${code}</code></pre>`;
+      return createPlaceholder(html);
     });
 
-    // Inline code: `text` -> <code>text</code>
-    // Use non-greedy match and handle escaped backticks
-    result = result.replace(/`([^`]+?)`/g, "<code>$1</code>");
+    // 2. Protect inline code
+    result = result.replace(/`([^`]+?)`/g, (match, code) => {
+      return createPlaceholder(`<code>${code}</code>`);
+    });
 
-    // Bold: **text** -> <b>text</b> (process double asterisk first)
-    result = result.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+    // 3. Protect links (process content inside links later)
+    result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+      return createPlaceholder(`<a href="${url}">${text}</a>`);
+    });
 
-    // Underline: __text__ -> <u>text</u> (following Telegram MarkdownV2 spec)
-    result = result.replace(/__(.+?)__/g, "<u>$1</u>");
+    // 4. Process formatting markers - simple approach, no nesting support
+    // Process longer patterns first to avoid conflicts
+
+    // Bold: **text** -> <b>text</b> (exclude *** patterns)
+    result = result.replace(/\*\*([^*]+?)\*\*/g, "<b>$1</b>");
+
+    // Underline: __text__ -> <u>text</u>
+    result = result.replace(/__([^_]+?)__/g, "<u>$1</u>");
 
     // Strikethrough: ~~text~~ -> <s>text</s>
-    result = result.replace(/~~([\s\S]+?)~~/g, "<s>$1</s>");
+    result = result.replace(/~~([^~]+?)~~/g, "<s>$1</s>");
 
-    // Italic: *text* or _text_ -> <i>text</i> (process after double markers)
-    result = result.replace(/\*(.+?)\*/g, "<i>$1</i>");
-    result = result.replace(/_(.+?)_/g, "<i>$1</i>");
+    // Italic: *text* or _text_ -> <i>text</i>
+    result = result.replace(/\*([^*]+?)\*/g, "<i>$1</i>");
+    result = result.replace(/_([^_]+?)_/g, "<i>$1</i>");
 
     // Blockquote: > text -> <blockquote>text</blockquote>
     result = result.replace(/^&gt;\s*(.+)$/gm, "<blockquote>$1</blockquote>");
+
+    // Restore all placeholders
+    result = restorePlaceholders(result);
   }
 
   return result;
@@ -1125,7 +1150,7 @@ function validateBatchNotifications(args) {
 const server = new Server(
   {
     name: "telegram-bot",
-    version: "0.2.9",
+    version: "0.2.10",
   },
   {
     capabilities: {

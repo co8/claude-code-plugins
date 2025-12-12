@@ -47,4 +47,5 @@ telegram.local.md
 
 # Runtime state files
 mcp-server/.claude/telegram_task_message_id
+.claude/telegram_task_message_id
 .afk-mode.state

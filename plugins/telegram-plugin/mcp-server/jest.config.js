@@ -20,8 +20,13 @@ export default {
   // Coverage configuration
   collectCoverageFrom: [
     'telegram-bot.js',
+    'config/**/*.js',
+    'utils/**/*.js',
+    'services/**/*.js',
+    'server/**/*.js',
     '!node_modules/**',
     '!tests/**',
+    '!__tests__/**',
     '!coverage/**'
   ],
 
@@ -60,7 +65,7 @@ export default {
   restoreMocks: true,
 
   // Module paths
-  roots: ['<rootDir>/../tests'],
+  roots: ['<rootDir>/../tests', '<rootDir>/__tests__'],
 
   // Module name mapper (if needed for aliases)
   moduleNameMapper: {},

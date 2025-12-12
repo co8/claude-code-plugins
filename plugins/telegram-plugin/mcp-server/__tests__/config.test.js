@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from '@jest/globals';
 import { readFileSync, writeFileSync, unlinkSync, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { loadConfig, validateConfigValue, CONFIG_SCHEMA } from '../config/config-loader.js';
 
 describe('Configuration Tests', () => {
   const testConfigDir = join(tmpdir(), 'telegram-plugin-test');

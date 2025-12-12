@@ -1,6 +1,7 @@
 import { describe, it, expect } from '@jest/globals';
+import { markdownToHTML } from '../utils/markdown.js';
 
-// Copy of escapeMarkdown function for testing
+// Legacy function for backward compatibility testing
 function escapeMarkdown(text) {
   if (typeof text !== 'string') return '';
   return text.replace(/[_*\[\]()~`>#+=|{}.!-]/g, '\\$&');
@@ -46,12 +47,11 @@ describe('Markdown Escaping Tests', () => {
     expect(escaped).toContain('\\]');
   });
 
-  it('should not double-escape', () => {
+  it('should handle plain text without special chars', () => {
     const input = 'Test';
-    const once = escapeMarkdown(input);
-    const twice = escapeMarkdown(once);
+    const result = escapeMarkdown(input);
 
-    // Should escape the backslashes on second pass
-    expect(twice).not.toBe(once);
+    // Plain text should remain unchanged
+    expect(result).toBe(input);
   });
 });

@@ -224,7 +224,10 @@ function markdownToHTML(text, options = { preserveFormatting: false }) {
 
   if (options.preserveFormatting) {
     // Convert Markdown syntax to HTML tags
-    // Process in order: code first (to protect from other replacements), then bold, then italic
+    // Process in order: links first (to protect URLs), then code, then bold, then italic
+
+    // Links: [text](url) -> <a href="url">text</a>
+    result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
 
     // Code: `text` -> <code>text</code>
     result = result.replace(/`([^`]+)`/g, "<code>$1</code>");
@@ -345,11 +348,16 @@ let isListeningForCommands = false;
 
 // AFK mode state
 let isAfkMode = false;
+let afkStartTime = null;
 
 // Persist AFK mode state to file
-function saveAfkState(enabled) {
+function saveAfkState(enabled, startTime = null) {
   try {
-    writeFileSync(AFK_STATE_PATH, enabled ? "enabled" : "disabled", "utf-8");
+    const stateData = {
+      enabled,
+      startTime: startTime || (enabled ? Date.now() : null),
+    };
+    writeFileSync(AFK_STATE_PATH, JSON.stringify(stateData), "utf-8");
   } catch (error) {
     log("error", "Failed to save AFK state", { error: error.message });
   }
@@ -359,13 +367,39 @@ function saveAfkState(enabled) {
 function loadAfkState() {
   try {
     if (existsSync(AFK_STATE_PATH)) {
-      const state = readFileSync(AFK_STATE_PATH, "utf-8").trim();
-      return state === "enabled";
+      const content = readFileSync(AFK_STATE_PATH, "utf-8").trim();
+      // Support legacy format
+      if (content === "enabled" || content === "disabled") {
+        afkStartTime = null;
+        return content === "enabled";
+      }
+      // New JSON format
+      const stateData = JSON.parse(content);
+      afkStartTime = stateData.startTime;
+      return stateData.enabled;
     }
   } catch (error) {
     log("error", "Failed to load AFK state", { error: error.message });
   }
   return false;
+}
+
+// Format duration in human-readable format
+function formatDuration(milliseconds) {
+  const seconds = Math.floor(milliseconds / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) {
+    return `${days}d ${hours % 24}h ${minutes % 60}m`;
+  } else if (hours > 0) {
+    return `${hours}h ${minutes % 60}m`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${seconds % 60}s`;
+  } else {
+    return `${seconds}s`;
+  }
 }
 
 // FIX #3: Periodic cleanup for pendingApprovals
@@ -557,8 +591,9 @@ function getListenerStatus() {
 async function enableAfkMode() {
   try {
     isAfkMode = true;
-    saveAfkState(true);
-    const message = "🔔 *Telegram service enabled* - I'll notify you via Telegram";
+    afkStartTime = Date.now();
+    saveAfkState(true, afkStartTime);
+    const message = "🤖 <b>AFK Enabled</b> | Claude will notify you via Telegram";
     await sendMessage(message, "high");
     log("info", "AFK mode enabled");
     return {
@@ -576,14 +611,17 @@ async function enableAfkMode() {
 async function disableAfkMode() {
   try {
     isAfkMode = false;
+    const duration = afkStartTime ? formatDuration(Date.now() - afkStartTime) : "Unknown";
     saveAfkState(false);
-    const message = "🔕 *Telegram service disabled* - notifications paused";
+    afkStartTime = null;
+    const message = `🖥️ <b>AFK Disabled</b> | Duration of Session: ${duration}`;
     await sendMessage(message, "high");
-    log("info", "AFK mode disabled");
+    log("info", "AFK mode disabled", { duration });
     return {
       success: true,
       message: "AFK mode disabled",
       afk_mode: false,
+      duration,
     };
   } catch (error) {
     log("error", "Failed to disable AFK mode", { error: error.message });
@@ -828,19 +866,56 @@ async function pollResponse(approvalId, timeoutSeconds = 600) {
 
         try {
           // Acknowledge the callback
-          await bot.answerCallbackQuery(callbackQuery.id);
+          await bot.answerCallbackQuery(callbackQuery.id, {
+            text: `Selected: ${data.label}`,
+          });
 
-          // Send acknowledgement message to user
-          await bot.sendMessage(
-            config.chat_id,
-            `✅ Response received: <b>${markdownToHTML(data.label, {
-              preserveFormatting: true,
-            })}</b>`,
-            {
-              parse_mode: "HTML",
-              reply_to_message_id: callbackQuery.message.message_id,
+          // Update the message to show the selected option with visual feedback
+          const selectedIdx = data.idx;
+          const updatedKeyboard = [];
+
+          for (let i = 0; i < approval.options.length; i += 2) {
+            const row = [];
+            // First button in row
+            const isFirstSelected = i === selectedIdx;
+            row.push({
+              text: isFirstSelected ? `✅ ${approval.options[i].label}` : approval.options[i].label,
+              callback_data: JSON.stringify({ idx: i, label: approval.options[i].label }),
+            });
+            // Second button in row (if exists)
+            if (i + 1 < approval.options.length) {
+              const isSecondSelected = (i + 1) === selectedIdx;
+              row.push({
+                text: isSecondSelected ? `✅ ${approval.options[i + 1].label}` : approval.options[i + 1].label,
+                callback_data: JSON.stringify({ idx: i + 1, label: approval.options[i + 1].label }),
+              });
             }
-          );
+            updatedKeyboard.push(row);
+          }
+
+          // Add "Other" button
+          const isOtherSelected = selectedIdx === -1;
+          updatedKeyboard.push([
+            {
+              text: isOtherSelected ? "✅ 💬 Other (custom text)" : "💬 Other (custom text)",
+              callback_data: JSON.stringify({ idx: -1, label: "Other" }),
+            },
+          ]);
+
+          // Edit the message to update button appearance
+          try {
+            await bot.editMessageReplyMarkup(
+              { inline_keyboard: updatedKeyboard },
+              {
+                chat_id: config.chat_id,
+                message_id: callbackQuery.message.message_id,
+              }
+            );
+          } catch (editError) {
+            log("info", "Could not update button appearance", {
+              error: editError.message,
+            });
+          }
 
           // Handle "Other" option - request text input
           if (data.idx === -1) {

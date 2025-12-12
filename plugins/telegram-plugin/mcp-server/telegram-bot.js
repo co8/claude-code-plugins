@@ -14,6 +14,7 @@ import {
   statSync,
   renameSync,
   unlinkSync,
+  writeFileSync,
 } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -56,6 +57,7 @@ function getConfigPath() {
 
 const CONFIG_PATH = getConfigPath();
 const LOG_PATH = join(dirname(__dirname), "telegram.log");
+const AFK_STATE_PATH = join(dirname(__dirname), ".afk-mode.state");
 const MAX_LOG_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_LOG_FILES = 3;
 
@@ -344,6 +346,28 @@ let isListeningForCommands = false;
 // AFK mode state
 let isAfkMode = false;
 
+// Persist AFK mode state to file
+function saveAfkState(enabled) {
+  try {
+    writeFileSync(AFK_STATE_PATH, enabled ? "enabled" : "disabled", "utf-8");
+  } catch (error) {
+    log("error", "Failed to save AFK state", { error: error.message });
+  }
+}
+
+// Load AFK mode state from file on startup
+function loadAfkState() {
+  try {
+    if (existsSync(AFK_STATE_PATH)) {
+      const state = readFileSync(AFK_STATE_PATH, "utf-8").trim();
+      return state === "enabled";
+    }
+  } catch (error) {
+    log("error", "Failed to load AFK state", { error: error.message });
+  }
+  return false;
+}
+
 // FIX #3: Periodic cleanup for pendingApprovals
 function cleanupOldApprovals() {
   const now = Date.now();
@@ -391,6 +415,12 @@ async function initBot() {
   batcher = new MessageBatcher(config.batch_window_seconds);
   rateLimiter = new RateLimiter(30); // 30 messages per minute
 
+  // Load AFK state from file
+  isAfkMode = loadAfkState();
+  if (isAfkMode) {
+    log("info", "Restored AFK mode from previous session");
+  }
+
   // Get bot info to identify own messages
   try {
     botInfo = await bot.getMe();
@@ -399,6 +429,7 @@ async function initBot() {
       config_path: CONFIG_PATH,
       bot_id: botInfo.id,
       bot_username: botInfo.username,
+      afk_mode: isAfkMode,
     });
   } catch (error) {
     log("error", "Failed to get bot info", { error: error.message });
@@ -526,6 +557,7 @@ function getListenerStatus() {
 async function enableAfkMode() {
   try {
     isAfkMode = true;
+    saveAfkState(true);
     const message = "🔔 *Telegram service enabled* - I'll notify you via Telegram";
     await sendMessage(message, "high");
     log("info", "AFK mode enabled");
@@ -544,6 +576,7 @@ async function enableAfkMode() {
 async function disableAfkMode() {
   try {
     isAfkMode = false;
+    saveAfkState(false);
     const message = "🔕 *Telegram service disabled* - notifications paused";
     await sendMessage(message, "high");
     log("info", "AFK mode disabled");

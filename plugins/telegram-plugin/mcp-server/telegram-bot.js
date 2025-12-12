@@ -352,24 +352,27 @@ class MessageBatcher {
     this.window = windowSeconds * 1000;
     this.pending = [];
     this.timer = null;
+    this.compactingMessageId = null;
   }
 
-  add(message, priority = "normal") {
+  async add(message, priority = "normal") {
     this.pending.push({ message, priority, timestamp: Date.now() });
 
     // High priority messages send immediately
     if (priority === "high") {
-      this.flush();
+      await this.flush();
       return;
     }
 
     // Otherwise, batch within window
     if (!this.timer) {
-      this.timer = setTimeout(() => this.flush(), this.window);
+      this.timer = setTimeout(async () => {
+        await this.flush();
+      }, this.window);
     }
   }
 
-  flush() {
+  async flush() {
     if (this.timer) {
       clearTimeout(this.timer);
       this.timer = null;
@@ -377,11 +380,44 @@ class MessageBatcher {
 
     if (this.pending.length === 0) return null;
 
+    // Send compacting notification
+    try {
+      const count = this.pending.length;
+      const result = await sendMessage(
+        `📦 Compacting ${count} message${count > 1 ? "s" : ""}...`,
+        "high"
+      );
+      this.compactingMessageId = result.message_id;
+    } catch (error) {
+      log("error", "Failed to send compacting notification", {
+        error: error.message,
+      });
+    }
+
     // Combine similar messages
     const messages = this.pending.map((p) => p.message);
     const combined = messages.join("\n\n---\n\n");
 
     this.pending = [];
+
+    // Update compacting notification to show completion
+    if (this.compactingMessageId) {
+      try {
+        await editMessage(
+          this.compactingMessageId,
+          `✅ Compacting complete\n\n${combined}`
+        );
+        this.compactingMessageId = null;
+        return null; // Message already sent via edit
+      } catch (error) {
+        log("error", "Failed to edit compacting notification", {
+          error: error.message,
+        });
+        this.compactingMessageId = null;
+        // Fall through to return combined message
+      }
+    }
+
     return combined;
   }
 }
@@ -769,6 +805,47 @@ async function sendMessage(
   throw lastError;
 }
 
+// Edit an existing message
+async function editMessage(messageId, text, options = {}, retries = 3) {
+  if (!bot) await initBot();
+
+  // Apply rate limiting
+  await rateLimiter.throttle();
+
+  let lastError;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      await bot.editMessageText(text, {
+        chat_id: config.chat_id,
+        message_id: messageId,
+        parse_mode: "HTML",
+        ...options,
+      });
+
+      log("info", "Message edited", {
+        message_id: messageId,
+        attempt,
+      });
+
+      return { success: true, message_id: messageId };
+    } catch (error) {
+      lastError = error;
+      log("error", `Failed to edit message (attempt ${attempt}/${retries})`, {
+        error: error.message,
+        message_id: messageId,
+      });
+
+      if (attempt < retries) {
+        // Exponential backoff: 1s, 2s, 4s
+        const delay = Math.pow(2, attempt - 1) * 1000;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 // Send approval request with inline keyboard
 async function sendApprovalRequest(question, options, header) {
   if (!bot) await initBot();
@@ -1090,13 +1167,13 @@ async function batchNotifications(messages) {
   for (const msg of messages) {
     // Escape each message text before batching and convert Markdown formatting
     const escapedText = escapeMarkdown(msg.text, { preserveFormatting: true });
-    batcher.add(escapedText, msg.priority || "normal");
+    await batcher.add(escapedText, msg.priority || "normal");
   }
 
   // Flush immediately if any high priority
   const hasHighPriority = messages.some((m) => m.priority === "high");
   if (hasHighPriority) {
-    const combined = batcher.flush();
+    const combined = await batcher.flush();
     if (combined) {
       // Combined text is already escaped, so send directly
       await sendMessage(combined, "high");
@@ -1192,7 +1269,7 @@ function validateBatchNotifications(args) {
 const server = new Server(
   {
     name: "telegram-bot",
-    version: "0.2.17",
+    version: "0.2.18",
   },
   {
     capabilities: {
@@ -1578,7 +1655,7 @@ async function gracefulShutdown(signal) {
   try {
     // Flush pending messages
     if (batcher) {
-      const combined = batcher.flush();
+      const combined = await batcher.flush();
       if (combined) {
         await sendMessage(combined, "high").catch((err) => {
           log("error", "Failed to flush messages on shutdown", {

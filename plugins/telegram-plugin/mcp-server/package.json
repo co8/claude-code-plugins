@@ -1,6 +1,6 @@
 {
   "name": "telegram-mcp-server",
-  "version": "0.2.17",
+  "version": "0.2.18",
   "description": "MCP server for Telegram Bot API integration",
   "type": "module",
   "main": "telegram-bot.js",

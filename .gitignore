@@ -1,6 +1,10 @@
 # Local settings with secrets
 .claude/*.local.md
 
+# Runtime state files
+.claude/telegram_task_message_id
+.afk-mode.state
+
 # Logs
 *.log
 logs/

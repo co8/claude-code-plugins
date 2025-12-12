@@ -341,6 +341,9 @@ const pendingApprovals = new Map();
 const commandQueue = [];
 let isListeningForCommands = false;
 
+// AFK mode state
+let isAfkMode = false;
+
 // FIX #3: Periodic cleanup for pendingApprovals
 function cleanupOldApprovals() {
   const now = Date.now();
@@ -517,6 +520,42 @@ function getListenerStatus() {
     pending_commands: commandQueue.length,
     polling_active: bot ? bot.isPolling() : false,
   };
+}
+
+// Enable AFK mode
+async function enableAfkMode() {
+  try {
+    isAfkMode = true;
+    const message = "🔕 *AFK mode enabled* - I'll communicate via Telegram while you're away";
+    await sendMessage(message, "high");
+    log("info", "AFK mode enabled");
+    return {
+      success: true,
+      message: "AFK mode enabled",
+      afk_mode: true,
+    };
+  } catch (error) {
+    log("error", "Failed to enable AFK mode", { error: error.message });
+    throw error;
+  }
+}
+
+// Disable AFK mode
+async function disableAfkMode() {
+  try {
+    isAfkMode = false;
+    const message = "👋 *Welcome back!* AFK mode disabled - resuming normal communication";
+    await sendMessage(message, "high");
+    log("info", "AFK mode disabled");
+    return {
+      success: true,
+      message: "AFK mode disabled",
+      afk_mode: false,
+    };
+  } catch (error) {
+    log("error", "Failed to disable AFK mode", { error: error.message });
+    throw error;
+  }
 }
 
 // Send message to Telegram with retry logic
@@ -1124,6 +1163,24 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {},
         },
       },
+      {
+        name: "enable_afk_mode",
+        description:
+          "Enable AFK (Away From Keyboard) mode - Telegram becomes the primary communication channel. Sends a notification to Telegram confirming AFK mode is active.",
+        inputSchema: {
+          type: "object",
+          properties: {},
+        },
+      },
+      {
+        name: "disable_afk_mode",
+        description:
+          "Disable AFK (Away From Keyboard) mode - Return to normal communication. Sends a notification to Telegram confirming user is back.",
+        inputSchema: {
+          type: "object",
+          properties: {},
+        },
+      },
     ],
   };
 });
@@ -1230,6 +1287,30 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "get_listener_status": {
         const result = getListenerStatus();
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      case "enable_afk_mode": {
+        const result = await enableAfkMode();
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      case "disable_afk_mode": {
+        const result = await disableAfkMode();
         return {
           content: [
             {

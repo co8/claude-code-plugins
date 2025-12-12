@@ -75,8 +75,11 @@ while IFS= read -r todo_json; do
   if [ "$status" = "completed" ]; then
     # Green checkmark with bold white text
     task_list="${task_list}✅ <b>${escaped_content}</b>\n"
+  elif [ "$status" = "in_progress" ]; then
+    # Spinner with bold text for current task
+    task_list="${task_list}🔄 <b>${escaped_content}</b>\n"
   else
-    # Light gray square with italic text
+    # Light gray square with italic text for pending
     task_list="${task_list}⬜ <i>${escaped_content}</i>\n"
   fi
 done < <(echo "$todos" | jq -c '.[]')

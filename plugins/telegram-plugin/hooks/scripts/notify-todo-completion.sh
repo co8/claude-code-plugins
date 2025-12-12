@@ -73,8 +73,8 @@ while IFS= read -r todo_json; do
 
   # Use styled formatting based on status
   if [ "$status" = "completed" ]; then
-    # Green checkmark with bold white text
-    task_list="${task_list}✅ <b>${escaped_content}</b>\n"
+    # Green checkmark with regular text
+    task_list="${task_list}✅ ${escaped_content}\n"
   elif [ "$status" = "in_progress" ]; then
     # Spinner with bold text for current task
     task_list="${task_list}🔄 <b>${escaped_content}</b>\n"

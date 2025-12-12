@@ -526,7 +526,7 @@ function getListenerStatus() {
 async function enableAfkMode() {
   try {
     isAfkMode = true;
-    const message = "🔕 *AFK mode enabled* - I'll communicate via Telegram while you're away";
+    const message = "🔔 *Telegram service enabled* - I'll notify you via Telegram";
     await sendMessage(message, "high");
     log("info", "AFK mode enabled");
     return {
@@ -544,7 +544,7 @@ async function enableAfkMode() {
 async function disableAfkMode() {
   try {
     isAfkMode = false;
-    const message = "👋 *Welcome back!* AFK mode disabled - resuming normal communication";
+    const message = "🔕 *Telegram service disabled* - notifications paused";
     await sendMessage(message, "high");
     log("info", "AFK mode disabled");
     return {

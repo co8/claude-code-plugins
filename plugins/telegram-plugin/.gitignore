@@ -46,5 +46,5 @@ coverage/
 telegram.local.md
 
 # Runtime state files
-.claude/telegram_task_message_id
+mcp-server/.claude/telegram_task_message_id
 .afk-mode.state

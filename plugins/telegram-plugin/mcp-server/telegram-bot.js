@@ -637,6 +637,13 @@ async function enableAfkMode() {
     isAfkMode = true;
     afkStartTime = Date.now();
     saveAfkState(true, afkStartTime);
+
+    // Automatically start the message listener when entering AFK mode
+    if (!isListeningForCommands) {
+      await startMessageListener();
+      log("info", "Message listener started automatically with AFK mode");
+    }
+
     const message = "🤖 <b>AFK Enabled</b> | Claude will notify you via Telegram";
     await sendMessage(message, "high");
     log("info", "AFK mode enabled");
@@ -644,6 +651,7 @@ async function enableAfkMode() {
       success: true,
       message: "AFK mode enabled",
       afk_mode: true,
+      listener_started: true,
     };
   } catch (error) {
     log("error", "Failed to enable AFK mode", { error: error.message });
@@ -658,6 +666,13 @@ async function disableAfkMode() {
     const duration = afkStartTime ? formatDuration(Date.now() - afkStartTime) : "Unknown";
     saveAfkState(false);
     afkStartTime = null;
+
+    // Automatically stop the message listener when leaving AFK mode
+    if (isListeningForCommands) {
+      await stopMessageListener();
+      log("info", "Message listener stopped automatically with AFK mode");
+    }
+
     const message = `🖥️ <b>AFK Disabled</b> | Duration of Session: ${duration}`;
     await sendMessage(message, "high");
     log("info", "AFK mode disabled", { duration });
@@ -666,6 +681,7 @@ async function disableAfkMode() {
       message: "AFK mode disabled",
       afk_mode: false,
       duration,
+      listener_stopped: true,
     };
   } catch (error) {
     log("error", "Failed to disable AFK mode", { error: error.message });
@@ -1150,7 +1166,7 @@ function validateBatchNotifications(args) {
 const server = new Server(
   {
     name: "telegram-bot",
-    version: "0.2.11",
+    version: "0.2.12",
   },
   {
     capabilities: {

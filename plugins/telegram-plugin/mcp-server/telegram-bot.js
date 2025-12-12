@@ -224,21 +224,35 @@ function markdownToHTML(text, options = { preserveFormatting: false }) {
 
   if (options.preserveFormatting) {
     // Convert Markdown syntax to HTML tags
-    // Process in order: links first (to protect URLs), then code, then bold, then italic
+    // Process in order: links first (to protect URLs), then code blocks, then inline code,
+    // then format markers (longer patterns before shorter ones)
 
     // Links: [text](url) -> <a href="url">text</a>
     result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
 
-    // Code: `text` -> <code>text</code>
-    result = result.replace(/`([^`]+)`/g, "<code>$1</code>");
+    // Code blocks: ```language\ncode``` or ```code``` -> <pre><code>code</code></pre>
+    // Handle optional language identifier and multiline content
+    result = result.replace(/```(?:\w+)?\n?([\s\S]+?)```/g, "<pre><code>$1</code></pre>");
 
-    // Bold: **text** or *text* -> <b>text</b>
-    result = result.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>"); // **bold** (double asterisk)
-    result = result.replace(/\*(.+?)\*/g, "<b>$1</b>"); // *bold* (single asterisk)
+    // Inline code: `text` -> <code>text</code>
+    // Use non-greedy match and handle escaped backticks
+    result = result.replace(/`([^`]+?)`/g, "<code>$1</code>");
 
-    // Italic: __text__ or _text_ -> <i>text</i>
-    result = result.replace(/__(.+?)__/g, "<i>$1</i>"); // __italic__ (double underscore)
-    result = result.replace(/_(.+?)_/g, "<i>$1</i>"); // _italic_ (single underscore)
+    // Bold: **text** -> <b>text</b> (process double asterisk first)
+    result = result.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+
+    // Underline: __text__ -> <u>text</u> (following Telegram MarkdownV2 spec)
+    result = result.replace(/__(.+?)__/g, "<u>$1</u>");
+
+    // Strikethrough: ~~text~~ -> <s>text</s>
+    result = result.replace(/~~(.+?)~~/g, "<s>$1</s>");
+
+    // Italic: *text* or _text_ -> <i>text</i> (process after double markers)
+    result = result.replace(/\*(.+?)\*/g, "<i>$1</i>");
+    result = result.replace(/_(.+?)_/g, "<i>$1</i>");
+
+    // Blockquote: > text -> <blockquote>text</blockquote>
+    result = result.replace(/^&gt;\s*(.+)$/gm, "<blockquote>$1</blockquote>");
   }
 
   return result;
@@ -646,6 +660,7 @@ async function sendMessage(
     try {
       const message = await bot.sendMessage(config.chat_id, text, {
         parse_mode: "HTML",
+        link_preview_options: { is_disabled: true },
         ...options,
       });
 

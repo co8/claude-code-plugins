@@ -21,6 +21,28 @@ CONFIG_FILE=$(get_config_path) || {
   exit 0
 }
 
+# Check if AFK mode is enabled by reading the state file
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-}"
+if [ -z "$PLUGIN_ROOT" ]; then
+  # Fallback: try to find it relative to script location
+  PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+fi
+
+AFK_STATE_FILE="${PLUGIN_ROOT}/.afk-mode.state"
+
+# If AFK mode is not enabled, skip notification
+if [ ! -f "$AFK_STATE_FILE" ]; then
+  echo '{"continue": true, "suppressOutput": true}'
+  exit 0
+fi
+
+# Parse JSON state file to check if AFK is enabled
+afk_enabled=$(cat "$AFK_STATE_FILE" 2>/dev/null | jq -r '.enabled // false' 2>/dev/null || echo "false")
+if [ "$afk_enabled" != "true" ]; then
+  echo '{"continue": true, "suppressOutput": true}'
+  exit 0
+fi
+
 # Extract notification settings
 todo_completions_enabled=$(get_bool_config "$CONFIG_FILE" "todo_completions" "false")
 

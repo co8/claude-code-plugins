@@ -47,7 +47,7 @@ fi
 cd ..
 
 # 2. Bash Hook Tests
-run_section "2. Bash Hook Tests (13 tests)"
+run_section "2. Bash Hook Tests (17 tests)"
 cd mcp-server
 if npm run test:hooks 2>&1 | tee /tmp/hooks-output.txt | tail -20; then
   HOOKS_PASSED=$(grep "Tests passed:" /tmp/hooks-output.txt | grep -o "[0-9]*" | tail -1)

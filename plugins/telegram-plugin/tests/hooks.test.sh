@@ -328,6 +328,114 @@ test_malformed_input() {
   rm -f "/tmp/.claude/telegram.local.md"
 }
 
+# Test: AFK mode - No state file
+test_afk_no_state_file() {
+  local script="$HOOKS_DIR/notify-todo-completion.sh"
+  local input='{"tool_input": {"todos": [{"content": "Test", "status": "completed"}]}, "cwd": "/test"}'
+
+  export HOME=/tmp
+  export CLAUDE_PLUGIN_ROOT="/tmp/test-plugin"
+  mkdir -p "/tmp/.claude"
+  mkdir -p "$CLAUDE_PLUGIN_ROOT"
+  cp "$TEST_CONFIG" "/tmp/.claude/telegram.local.md"
+
+  # Ensure no AFK state file exists
+  rm -f "$CLAUDE_PLUGIN_ROOT/.afk-mode.state"
+
+  local output=$(echo "$input" | bash "$script" 2>/dev/null)
+  local suppress=$(echo "$output" | jq -r '.suppressOutput' 2>/dev/null)
+
+  if [ "$suppress" == "true" ]; then
+    print_result "Skips notification when AFK state file missing" "PASS" ""
+  else
+    print_result "Skips notification when AFK state file missing" "FAIL" "Should skip when no AFK state file"
+  fi
+
+  rm -f "/tmp/.claude/telegram.local.md"
+  rm -rf "$CLAUDE_PLUGIN_ROOT"
+}
+
+# Test: AFK mode - Disabled state
+test_afk_disabled() {
+  local script="$HOOKS_DIR/notify-todo-completion.sh"
+  local input='{"tool_input": {"todos": [{"content": "Test", "status": "completed"}]}, "cwd": "/test"}'
+
+  export HOME=/tmp
+  export CLAUDE_PLUGIN_ROOT="/tmp/test-plugin"
+  mkdir -p "/tmp/.claude"
+  mkdir -p "$CLAUDE_PLUGIN_ROOT"
+  cp "$TEST_CONFIG" "/tmp/.claude/telegram.local.md"
+
+  # Create AFK state file with disabled state
+  echo '{"enabled": false, "startTime": null}' > "$CLAUDE_PLUGIN_ROOT/.afk-mode.state"
+
+  local output=$(echo "$input" | bash "$script" 2>/dev/null)
+  local suppress=$(echo "$output" | jq -r '.suppressOutput' 2>/dev/null)
+
+  if [ "$suppress" == "true" ]; then
+    print_result "Skips notification when AFK mode disabled" "PASS" ""
+  else
+    print_result "Skips notification when AFK mode disabled" "FAIL" "Should skip when AFK disabled"
+  fi
+
+  rm -f "/tmp/.claude/telegram.local.md"
+  rm -rf "$CLAUDE_PLUGIN_ROOT"
+}
+
+# Test: AFK mode - Git commit hook respects AFK state
+test_git_commit_afk_disabled() {
+  local script="$HOOKS_DIR/notify-git-commit.sh"
+  local input='{"arguments": {"command": "git commit -m \"test commit\""}, "cwd": "/test"}'
+
+  export HOME=/tmp
+  export CLAUDE_PLUGIN_ROOT="/tmp/test-plugin"
+  mkdir -p "/tmp/.claude"
+  mkdir -p "$CLAUDE_PLUGIN_ROOT"
+  cp "$TEST_CONFIG" "/tmp/.claude/telegram.local.md"
+
+  # Create AFK state file with disabled state
+  echo '{"enabled": false, "startTime": null}' > "$CLAUDE_PLUGIN_ROOT/.afk-mode.state"
+
+  local output=$(echo "$input" | bash "$script" 2>/dev/null)
+  local suppress=$(echo "$output" | jq -r '.suppressOutput' 2>/dev/null)
+
+  if [ "$suppress" == "true" ]; then
+    print_result "Git commit hook skips when AFK disabled" "PASS" ""
+  else
+    print_result "Git commit hook skips when AFK disabled" "FAIL" "Should skip when AFK disabled"
+  fi
+
+  rm -f "/tmp/.claude/telegram.local.md"
+  rm -rf "$CLAUDE_PLUGIN_ROOT"
+}
+
+# Test: AFK mode - Git commit hook respects AFK enabled with JSON format
+test_git_commit_afk_json_parsing() {
+  local script="$HOOKS_DIR/notify-git-commit.sh"
+  local input='{"arguments": {"command": "git commit -m \"test\""}, "cwd": "/test"}'
+
+  export HOME=/tmp
+  export CLAUDE_PLUGIN_ROOT="/tmp/test-plugin"
+  mkdir -p "/tmp/.claude"
+  mkdir -p "$CLAUDE_PLUGIN_ROOT"
+  cp "$TEST_CONFIG" "/tmp/.claude/telegram.local.md"
+
+  # Create AFK state with legacy string format
+  echo "disabled" > "$CLAUDE_PLUGIN_ROOT/.afk-mode.state"
+
+  local output=$(echo "$input" | bash "$script" 2>/dev/null)
+  local suppress=$(echo "$output" | jq -r '.suppressOutput' 2>/dev/null)
+
+  if [ "$suppress" == "true" ]; then
+    print_result "Git commit parses legacy AFK format" "PASS" ""
+  else
+    print_result "Git commit parses legacy AFK format" "FAIL" "Should handle legacy format"
+  fi
+
+  rm -f "/tmp/.claude/telegram.local.md"
+  rm -rf "$CLAUDE_PLUGIN_ROOT"
+}
+
 # Main test execution
 main() {
   echo "==============================================="
@@ -352,6 +460,10 @@ main() {
   test_config_parsing
   test_empty_input
   test_malformed_input
+  test_afk_no_state_file
+  test_afk_disabled
+  test_git_commit_afk_disabled
+  test_git_commit_afk_json_parsing
 
   # Teardown
   teardown

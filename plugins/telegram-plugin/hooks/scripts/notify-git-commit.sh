@@ -31,7 +31,14 @@ fi
 AFK_STATE_FILE="${PLUGIN_ROOT}/.afk-mode.state"
 
 # If AFK mode is not enabled, skip notification
-if [ ! -f "$AFK_STATE_FILE" ] || [ "$(cat "$AFK_STATE_FILE" 2>/dev/null || echo "disabled")" != "enabled" ]; then
+if [ ! -f "$AFK_STATE_FILE" ]; then
+  echo '{"continue": true, "suppressOutput": true}'
+  exit 0
+fi
+
+# Parse JSON state file to check if AFK is enabled
+afk_enabled=$(cat "$AFK_STATE_FILE" 2>/dev/null | jq -r '.enabled // false' 2>/dev/null || echo "false")
+if [ "$afk_enabled" != "true" ]; then
   echo '{"continue": true, "suppressOutput": true}'
   exit 0
 fi

@@ -236,11 +236,12 @@ This roadmap consolidates security improvements, optimizations, templates, and n
 **Quality Gate:** Marketplace E2E tests passing + Update system validated
 
 **Deliverables:**
-- ✅ Plugin Marketplace Web UI
-  - Next.js application
+- ✅ Plugin Marketplace Web UI (GitHub Pages)
+  - Static site generation
   - Plugin cards and search
   - Installation instructions
   - Author profiles
+  - No backend required
 
 - ✅ Automatic Update System
   - Update checking
@@ -335,33 +336,7 @@ This roadmap consolidates security improvements, optimizations, templates, and n
 
 ---
 
-### Step 8: GitHub Actions Plugin
-
-**Theme:** Expand the ecosystem
-
-**Quality Gate:** GitHub plugin 100% tested + Rules engine validated
-
-**Deliverables:**
-- ✅ GitHub Actions Plugin
-  - Workflow triggers
-  - Status checks
-  - Log viewing
-  - Deployment monitoring
-
-- ✅ Custom Notification Rules
-  - Rule engine
-  - Condition evaluation
-  - Action execution
-  - User-defined rules
-
-**Effort:** 12 hours
-**Risk:** Low
-**Impact:** Medium (integration)
-**Tests Required:** GitHub API integration tests + Rule engine tests
-
----
-
-### Step 9: Rich Media & Analytics
+### Step 8: Rich Media & Analytics
 
 **Theme:** Enhanced communication
 
@@ -384,84 +359,6 @@ This roadmap consolidates security improvements, optimizations, templates, and n
 **Risk:** Low
 **Impact:** Low (nice-to-have)
 **Tests Required:** Image upload tests + Analytics data validation
-
----
-
-### Step 10: Telegram Mini App
-
-**Theme:** Rich interactions
-
-**Quality Gate:** Mini app E2E tests passing + UI fully functional
-
-**Deliverables:**
-- ✅ Telegram Mini App
-  - React application
-  - Dashboard UI
-  - Message history browser
-  - Interactive controls
-  - Settings panel
-
-**Effort:** 12 hours
-**Risk:** High
-**Impact:** Medium (advanced UI)
-**Tests Required:** React component tests + Mini app integration tests
-
----
-
-### Step 11: Slack Plugin
-
-**Theme:** Alternative communication
-
-**Quality Gate:** Slack plugin 100% tested + Group features validated
-
-**Deliverables:**
-- ✅ Slack Integration Plugin
-  - Slack API client
-  - Message sending
-  - File uploads
-  - Interactive buttons
-  - Thread support
-
-- ✅ Group Chat Support (Telegram)
-  - Group notifications
-  - @mentions
-  - Topic support
-
-**Effort:** 11 hours
-**Risk:** Low
-**Impact:** Medium (team collaboration)
-**Tests Required:** Slack API tests + Group chat tests
-
----
-
-### Step 12: Polish & Scale
-
-**Theme:** Production ready
-
-**Quality Gate:** All plugins tested + Documentation complete + Performance targets met
-
-**Deliverables:**
-- ✅ Documentation Overhaul
-  - Video tutorials
-  - Interactive guides
-  - API reference
-  - Migration guides
-
-- ✅ Community Features
-  - Plugin reviews/ratings
-  - Discussion forums
-  - Example plugins
-  - Best practices guide
-
-- ✅ Performance Benchmarks
-  - Monitoring dashboard
-  - Performance tests
-  - Optimization recommendations
-
-**Effort:** 12 hours
-**Risk:** Low
-**Impact:** Medium (polish)
-**Tests Required:** Documentation accuracy tests + Performance benchmarks
 
 ---
 
@@ -527,20 +424,18 @@ This roadmap consolidates security improvements, optimizations, templates, and n
 
 ### Phase 3: Developer Experience
 
-**Focus:** Debugger, Integrations, Rules
+**Focus:** Debugger, Media, Analytics
 
 **Quality Gates:**
 - ✅ Debugger fully functional
 - ✅ Plugin creation <15 min
-- ✅ GitHub integration tested
-- ✅ Rules engine validated
+- ✅ Media handling tested
+- ✅ Analytics validated
 - ✅ All tests passing
 
 **Deliverables:**
 - Plugin debugger
 - Live reload
-- GitHub Actions plugin
-- Custom notification rules
 - Rich media support
 - Analytics system
 
@@ -551,37 +446,31 @@ This roadmap consolidates security improvements, optimizations, templates, and n
 - 100% test coverage
 - 5+ external contributors
 
-**Effort:** 34 hours
+**Effort:** 22 hours
 
 ---
 
-### Phase 4: Scale & Polish
+### Phase 4: Future Improvements
 
-**Focus:** Mini App, Slack, Documentation
+**Focus:** Advanced integrations and polish
 
-**Quality Gates:**
-- ✅ All plugins 100% tested
-- ✅ Documentation complete
-- ✅ Performance targets met
-- ✅ 10+ plugins validated
-- ✅ Community contributing
+**Deferred to future releases:**
+- GitHub Actions Plugin (8h)
+- Custom Notification Rules (4h)
+- Telegram Mini App (12h)
+- Slack Integration Plugin (8h)
+- Group Chat Support (3h)
+- Documentation Overhaul (6h)
+- Community Features (6h)
+- Performance Benchmarks (6h)
 
-**Deliverables:**
-- Telegram Mini App
-- Slack plugin
-- Group chat support
-- Comprehensive documentation
-- Plugin reviews/ratings
-- Performance benchmarks
+**Total Deferred:** 53 hours
 
-**Success Criteria:**
-- 10+ plugins in marketplace
-- All tests passing
-- <10 min plugin creation
-- 10+ contributors
-- Performance targets achieved
-
-**Effort:** 35 hours
+**Rationale:**
+- Focus on core functionality first
+- These are enhancements, not requirements
+- Can be added incrementally after foundation is solid
+- Community can contribute these features
 
 ---
 
@@ -626,7 +515,7 @@ Every step and phase must pass these quality gates before proceeding:
 
 ### Development Effort
 
-**Total Effort:** ~160 hours
+**Total Core Effort:** ~107 hours (53 hours deferred to Phase 4)
 
 **Breakdown by Category:**
 - Security: 12 hours (8%)

@@ -1,4 +1,3 @@
-import { appendFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { log } from "../utils/logger.js";
@@ -9,8 +8,13 @@ const __dirname = dirname(__filename);
 
 // Approval request storage
 const pendingApprovals = new Map();
+const MAX_CONCURRENT_APPROVALS = 50;
 
-// Periodic cleanup for pendingApprovals
+/**
+ * Cleans up old approval requests that are older than 24 hours
+ * This prevents memory leaks from abandoned approvals
+ * @returns {void}
+ */
 export function cleanupOldApprovals() {
   const now = Date.now();
   const maxAge = 24 * 60 * 60 * 1000; // 24 hours
@@ -35,7 +39,15 @@ export function cleanupOldApprovals() {
   }
 }
 
-// Send approval request with inline keyboard
+/**
+ * Sends an approval request to Telegram with inline keyboard buttons
+ * @param {string} question - The question to ask the user
+ * @param {Array<{label: string, description: string}>} options - Available options
+ * @param {string} header - Header text for the approval request
+ * @param {Object} telegramClient - Telegram client instance
+ * @param {Object} config - Plugin configuration
+ * @returns {Promise<Object>} Approval request details
+ */
 export async function sendApprovalRequest(
   question,
   options,
@@ -44,6 +56,25 @@ export async function sendApprovalRequest(
   config
 ) {
   const bot = telegramClient.getBot();
+
+  // Enforce max concurrent approvals (O2 optimization)
+  if (pendingApprovals.size >= MAX_CONCURRENT_APPROVALS) {
+    log("info", "Max concurrent approvals reached, cleaning up", {
+      current_size: pendingApprovals.size,
+      max_size: MAX_CONCURRENT_APPROVALS,
+    });
+
+    cleanupOldApprovals();
+
+    // If still at limit, reject oldest
+    if (pendingApprovals.size >= MAX_CONCURRENT_APPROVALS) {
+      const oldestId = pendingApprovals.keys().next().value;
+      pendingApprovals.delete(oldestId);
+      log("info", "Deleted oldest approval to make room", {
+        deleted_id: oldestId,
+      });
+    }
+  }
 
   try {
     // Create inline keyboard with options in 2 columns
@@ -96,19 +127,12 @@ export async function sendApprovalRequest(
 
     const messageText = `🤔 <b>${escapedHeader}</b>\n\n${escapedQuestion}\n\n<i>Options:</i>\n${escapedOptions}`;
 
-    // Debug logging to file
-    const debugPath = join(dirname(dirname(__dirname)), "debug-approval.log");
-    const debugInfo = `
-=== APPROVAL REQUEST DEBUG ===
-Time: ${new Date().toISOString()}
-Escaped Header: ${escapedHeader}
-Escaped Question: ${escapedQuestion}
-Escaped Options: ${escapedOptions}
-Full Message Text:
-${messageText}
-===========================
-`;
-    appendFileSync(debugPath, debugInfo);
+    // Debug logging (non-blocking, using logger)
+    log("debug", "Approval request details", {
+      header: escapedHeader.substring(0, 100),
+      question: escapedQuestion.substring(0, 100),
+      options_count: options.length,
+    });
 
     const message = await bot.sendMessage(config.chat_id, messageText, {
       parse_mode: "HTML",
@@ -159,7 +183,7 @@ export async function pollResponse(
 
   const startTime = Date.now();
   const timeout = timeoutSeconds * 1000;
-  const pollInterval = 2000; // 2 seconds
+  let pollInterval = 100; // Start at 100ms for fast response
 
   // Track polling state to avoid conflicts
   let wasPolling = telegramClient.isPolling();
@@ -192,7 +216,7 @@ export async function pollResponse(
           textHandler = null;
         }
         if (checkTimeout) {
-          clearInterval(checkTimeout);
+          clearTimeout(checkTimeout);
           checkTimeout = null;
         }
 
@@ -348,8 +372,8 @@ export async function pollResponse(
 
       bot.on("callback_query", callbackHandler);
 
-      // Timeout mechanism
-      checkTimeout = setInterval(() => {
+      // Timeout mechanism with adaptive backoff
+      const checkTimeoutFn = () => {
         if (Date.now() - startTime >= timeout) {
           if (!responseReceived) {
             cleanup();
@@ -364,11 +388,34 @@ export async function pollResponse(
               elapsed_seconds: timeoutSeconds,
             });
           }
+        } else {
+          // Adaptive backoff: 100ms → 500ms → 1000ms (max)
+          // This reduces CPU usage while maintaining responsiveness
+          if (pollInterval < 1000) {
+            pollInterval = Math.min(pollInterval + 100, 1000);
+          }
+
+          // Schedule next check with updated interval
+          checkTimeout = setTimeout(checkTimeoutFn, pollInterval);
         }
-      }, pollInterval);
+      };
+
+      // Start timeout checking
+      checkTimeout = setTimeout(checkTimeoutFn, pollInterval);
     } catch (error) {
       cleanup();
       reject(error);
     }
   });
 }
+
+// Start periodic cleanup (runs every hour)
+// This prevents memory leaks from abandoned approvals
+const CLEANUP_INTERVAL = 60 * 60 * 1000; // 1 hour
+setInterval(() => {
+  cleanupOldApprovals();
+}, CLEANUP_INTERVAL);
+
+log("info", "Approval manager initialized with periodic cleanup", {
+  cleanup_interval_minutes: CLEANUP_INTERVAL / (60 * 1000),
+});

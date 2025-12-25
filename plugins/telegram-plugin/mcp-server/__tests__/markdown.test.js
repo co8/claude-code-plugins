@@ -132,4 +132,100 @@ describe('Markdown to HTML Conversion', () => {
         .toBe(markdownToHTML(input, { preserveFormatting: true }));
     });
   });
+
+  describe('XSS Prevention - Security Tests', () => {
+    it('should escape img tags with onerror', () => {
+      const malicious = '<img src=x onerror="alert(1)">';
+      const result = markdownToHTML(malicious);
+      expect(result).toBe('&lt;img src=x onerror="alert(1)"&gt;');
+      expect(result).not.toContain('<img');
+    });
+
+    it('should escape iframe tags', () => {
+      const malicious = '<iframe src="javascript:alert(1)"></iframe>';
+      const result = markdownToHTML(malicious);
+      expect(result).toContain('&lt;iframe');
+      expect(result).toContain('&lt;/iframe&gt;');
+      expect(result).not.toContain('<iframe');
+    });
+
+    it('should escape HTML in markdown links', () => {
+      const malicious = '[<script>alert(1)</script>](http://example.com)';
+      const result = markdownToHTML(malicious, { preserveFormatting: true });
+      expect(result).not.toContain('<script>');
+      expect(result).toContain('&lt;script&gt;');
+    });
+
+    it('should escape HTML in bold text', () => {
+      const malicious = '**<script>alert(1)</script>**';
+      const result = markdownToHTML(malicious, { preserveFormatting: true });
+      expect(result).toBe('<b>&lt;script&gt;alert(1)&lt;/script&gt;</b>');
+      expect(result).not.toContain('<script>');
+    });
+
+    it('should handle nested HTML tags', () => {
+      const malicious = '<div><script>alert(1)</script></div>';
+      const result = markdownToHTML(malicious);
+      expect(result).not.toContain('<div>');
+      expect(result).not.toContain('<script>');
+      expect(result).toContain('&lt;div&gt;');
+      expect(result).toContain('&lt;script&gt;');
+    });
+
+    it('should escape HTML in inline code', () => {
+      const code = 'Use `<script>` tag for JavaScript';
+      const result = markdownToHTML(code, { preserveFormatting: true });
+      expect(result).toContain('&lt;script&gt;');
+      expect(result).not.toContain('<script>');
+    });
+
+    it('should handle data URIs in links', () => {
+      const text = '[click](data:text/html,<script>alert(1)</script>)';
+      const result = markdownToHTML(text, { preserveFormatting: true });
+      expect(result).toContain('&lt;script&gt;');
+      expect(result).not.toContain('<script>alert');
+    });
+
+    it('should handle malformed HTML tags', () => {
+      const text = '<script src=//evil.com>';
+      const result = markdownToHTML(text);
+      expect(result).toBe('&lt;script src=//evil.com&gt;');
+      expect(result).not.toContain('<script');
+    });
+
+    it('should handle double-encoded HTML', () => {
+      const text = '&lt;script&gt;alert(1)&lt;/script&gt;';
+      const result = markdownToHTML(text);
+      expect(result).toContain('&amp;lt;');
+    });
+
+    it('should handle extremely nested HTML', () => {
+      const text = '<div><div><div><script>alert(1)</script></div></div></div>';
+      const result = markdownToHTML(text);
+      expect(result).not.toContain('<script>');
+      expect(result).toContain('&lt;');
+      expect(result).toContain('&gt;');
+    });
+
+    it('should escape all angle brackets in comparisons', () => {
+      const text = 'if (x < 5 && y > 10)';
+      const result = markdownToHTML(text);
+      expect(result).toBe('if (x &lt; 5 &amp;&amp; y &gt; 10)');
+    });
+
+    it('should handle Unicode and emoji', () => {
+      const text = '**emoji** 😀 🎉';
+      const result = markdownToHTML(text, { preserveFormatting: true });
+      expect(result).toContain('😀');
+      expect(result).toContain('🎉');
+      expect(result).toContain('<b>emoji</b>');
+    });
+
+    it('should handle very long text without breaking', () => {
+      const longText = 'a'.repeat(10000);
+      const result = markdownToHTML(longText);
+      expect(result).toBe(longText);
+      expect(result.length).toBe(10000);
+    });
+  });
 });

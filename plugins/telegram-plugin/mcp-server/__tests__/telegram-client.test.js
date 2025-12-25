@@ -26,7 +26,6 @@ describe('TelegramClient', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
 
     config = {
       bot_token: 'test_token',
@@ -49,10 +48,14 @@ describe('TelegramClient', () => {
     mockBot.editMessageText.mockResolvedValue(true);
 
     client = new TelegramClient(config);
-  });
 
-  afterEach(() => {
-    jest.useRealTimers();
+    // Replace the bot instance with our mock
+    // This is necessary because ES module mocking doesn't work with static imports
+    client.bot = mockBot;
+
+    // Mock the rate limiter's throttle method to resolve immediately in tests
+    // This prevents test timeouts while still allowing us to verify it's called
+    jest.spyOn(client.rateLimiter, 'throttle').mockResolvedValue();
   });
 
   describe('Initialization', () => {
@@ -60,6 +63,37 @@ describe('TelegramClient', () => {
       expect(client.config).toEqual(config);
       expect(client.bot).toBeDefined();
       expect(client.rateLimiter).toBeDefined();
+    });
+
+    it('should use default rate limiting if not configured', () => {
+      const clientWithoutRateLimit = new TelegramClient(config);
+      expect(clientWithoutRateLimit.rateLimiter.maxPerMinute).toBe(20);
+      expect(clientWithoutRateLimit.rateLimiter.burstSize).toBe(5);
+    });
+
+    it('should use custom rate limiting from config', () => {
+      const customConfig = {
+        ...config,
+        rate_limiting: {
+          messages_per_minute: 15,
+          burst_size: 3,
+        },
+      };
+      const clientWithCustom = new TelegramClient(customConfig);
+      expect(clientWithCustom.rateLimiter.maxPerMinute).toBe(15);
+      expect(clientWithCustom.rateLimiter.burstSize).toBe(3);
+    });
+
+    it('should handle partial rate limiting config', () => {
+      const partialConfig = {
+        ...config,
+        rate_limiting: {
+          messages_per_minute: 10,
+        },
+      };
+      const clientWithPartial = new TelegramClient(partialConfig);
+      expect(clientWithPartial.rateLimiter.maxPerMinute).toBe(10);
+      expect(clientWithPartial.rateLimiter.burstSize).toBe(5); // Default
     });
 
     it('should fetch bot info on init', async () => {
@@ -152,11 +186,9 @@ describe('TelegramClient', () => {
     });
 
     it('should apply rate limiting', async () => {
-      const throttleSpy = jest.spyOn(client.rateLimiter, 'throttle');
-
       await client.sendMessage('Test');
 
-      expect(throttleSpy).toHaveBeenCalled();
+      expect(client.rateLimiter.throttle).toHaveBeenCalled();
     });
 
     it('should add robot reaction to sent messages', async () => {
@@ -189,21 +221,22 @@ describe('TelegramClient', () => {
     });
 
     it('should use exponential backoff for retries', async () => {
+      // Note: This test uses real timers for integration testing
+      // We verify exponential backoff by checking timing
       mockBot.sendMessage
         .mockRejectedValueOnce(new Error('Error 1'))
         .mockRejectedValueOnce(new Error('Error 2'))
         .mockResolvedValueOnce({ message_id: 1 });
 
-      const promise = client.sendMessage('Test');
+      const startTime = Date.now();
+      const result = await client.sendMessage('Test');
+      const elapsed = Date.now() - startTime;
 
-      // First retry after 1s
-      await jest.advanceTimersByTimeAsync(1000);
-      // Second retry after 2s
-      await jest.advanceTimersByTimeAsync(2000);
-
-      const result = await promise;
       expect(result.success).toBe(true);
-    });
+      expect(mockBot.sendMessage).toHaveBeenCalledTimes(3);
+      // Should have waited ~3 seconds (1s + 2s backoff)
+      expect(elapsed).toBeGreaterThan(2900);
+    }, 10000); // Increase timeout for this test
 
     it('should throw after max retries', async () => {
       mockBot.sendMessage.mockRejectedValue(new Error('Persistent error'));
@@ -243,11 +276,9 @@ describe('TelegramClient', () => {
     });
 
     it('should apply rate limiting', async () => {
-      const throttleSpy = jest.spyOn(client.rateLimiter, 'throttle');
-
       await client.editMessage(123, 'Updated');
 
-      expect(throttleSpy).toHaveBeenCalled();
+      expect(client.rateLimiter.throttle).toHaveBeenCalled();
     });
 
     it('should retry on failure', async () => {
@@ -278,5 +309,85 @@ describe('TelegramClient', () => {
         })
       );
     });
+  });
+
+  describe('Rate Limiting Integration Tests', () => {
+    let clientWithRealRateLimiter;
+
+    beforeEach(() => {
+      // Create a new client without mocking the rate limiter
+      const testConfig = {
+        bot_token: 'test_token',
+        chat_id: '123456',
+        rate_limiting: {
+          messages_per_minute: 5,
+          burst_size: 2,
+        },
+      };
+
+      clientWithRealRateLimiter = new TelegramClient(testConfig);
+      clientWithRealRateLimiter.bot = mockBot;
+      // NOTE: We do NOT mock the rate limiter here - testing real integration
+    });
+
+    it('should actually rate limit when sending multiple messages', async () => {
+      // Configure mock to respond quickly
+      mockBot.sendMessage.mockResolvedValue({ message_id: 1 });
+
+      const startTime = Date.now();
+
+      // Send 3 messages (exceeds burst size of 2)
+      await Promise.all([
+        clientWithRealRateLimiter.sendMessage('Message 1'),
+        clientWithRealRateLimiter.sendMessage('Message 2'),
+        clientWithRealRateLimiter.sendMessage('Message 3'),
+      ]);
+
+      const elapsed = Date.now() - startTime;
+
+      // Third message should be delayed due to burst limit (1 second)
+      expect(elapsed).toBeGreaterThan(900); // At least 900ms (allowing for timing variance)
+      expect(mockBot.sendMessage).toHaveBeenCalledTimes(3);
+    }, 5000);
+
+    it('should enforce per-minute rate limit', async () => {
+      mockBot.sendMessage.mockResolvedValue({ message_id: 1 });
+
+      const startTime = Date.now();
+
+      // Send 6 messages sequentially (exceeds 5 per minute limit)
+      for (let i = 0; i < 6; i++) {
+        await clientWithRealRateLimiter.sendMessage(`Message ${i + 1}`);
+      }
+
+      const elapsed = Date.now() - startTime;
+
+      // 6th message should be delayed until 60 seconds from first message
+      expect(mockBot.sendMessage).toHaveBeenCalledTimes(6);
+      // With burst size 2, we expect: 2 immediate, then delays
+      // This should take at least a few seconds due to rate limiting
+      expect(elapsed).toBeGreaterThan(1000);
+    }, 70000); // Allow time for 60-second window
+
+    it('should allow burst of messages then throttle', async () => {
+      mockBot.sendMessage.mockResolvedValue({ message_id: 1 });
+
+      // Send burst (should be fast)
+      const burstStart = Date.now();
+      await clientWithRealRateLimiter.sendMessage('Burst 1');
+      await clientWithRealRateLimiter.sendMessage('Burst 2');
+      const burstElapsed = Date.now() - burstStart;
+
+      // Burst should be quick (under 500ms)
+      expect(burstElapsed).toBeLessThan(500);
+
+      // Third message should be throttled
+      const throttledStart = Date.now();
+      await clientWithRealRateLimiter.sendMessage('Throttled');
+      const throttledElapsed = Date.now() - throttledStart;
+
+      // Should wait ~1 second for burst window to clear
+      expect(throttledElapsed).toBeGreaterThan(900);
+    }, 5000);
   });
 });

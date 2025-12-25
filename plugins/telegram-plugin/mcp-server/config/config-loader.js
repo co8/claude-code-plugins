@@ -14,6 +14,13 @@ export const CONFIG_SCHEMA = {
     default: "errors",
   },
   batch_window_seconds: { type: "number", min: 5, max: 300, default: 30 },
+  rate_limiting: {
+    type: "object",
+    properties: {
+      messages_per_minute: { type: "number", min: 1, max: 30, default: 20 },
+      burst_size: { type: "number", min: 1, max: 10, default: 5 },
+    },
+  },
   notifications: {
     type: "object",
     properties: {
@@ -125,6 +132,14 @@ export function loadConfig(configPath) {
     batch_window_seconds:
       parsedConfig.batch_window_seconds ??
       CONFIG_SCHEMA.batch_window_seconds.default,
+    rate_limiting: {
+      messages_per_minute:
+        parsedConfig.rate_limiting?.messages_per_minute ??
+        CONFIG_SCHEMA.rate_limiting.properties.messages_per_minute.default,
+      burst_size:
+        parsedConfig.rate_limiting?.burst_size ??
+        CONFIG_SCHEMA.rate_limiting.properties.burst_size.default,
+    },
     notifications: {
       todo_completions: parsedConfig.notifications?.todo_completions ?? true,
       errors: parsedConfig.notifications?.errors ?? true,
@@ -139,7 +154,20 @@ export function loadConfig(configPath) {
   const errors = [];
 
   for (const [key, schema] of Object.entries(CONFIG_SCHEMA)) {
-    if (schema.type === "object") continue; // Skip nested objects for now
+    if (schema.type === "object") {
+      // Validate nested object properties
+      if (schema.properties) {
+        const nestedObj = config[key];
+        for (const [propKey, propSchema] of Object.entries(schema.properties)) {
+          const propValue = nestedObj?.[propKey];
+          if (propValue !== undefined && propValue !== null) {
+            const error = validateConfigValue(`${key}.${propKey}`, propValue, propSchema);
+            if (error) errors.push(error);
+          }
+        }
+      }
+      continue;
+    }
 
     const value = config[key];
 

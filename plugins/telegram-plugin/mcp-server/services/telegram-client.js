@@ -6,7 +6,11 @@ export class TelegramClient {
   constructor(config) {
     this.config = config;
     this.bot = new TelegramBot(config.bot_token, { polling: false });
-    this.rateLimiter = new RateLimiter(30); // 30 messages per minute
+
+    // Use configurable rate limiting with burst protection
+    const messagesPerMinute = config.rate_limiting?.messages_per_minute || 20;
+    const burstSize = config.rate_limiting?.burst_size || 5;
+    this.rateLimiter = new RateLimiter(messagesPerMinute, burstSize);
     this.botInfo = null;
   }
 

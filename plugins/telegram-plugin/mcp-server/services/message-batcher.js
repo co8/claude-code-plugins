@@ -3,17 +3,40 @@ import { markdownToHTML } from "../utils/markdown.js";
 
 // Message batching
 export class MessageBatcher {
-  constructor(windowSeconds, sendMessageFn, editMessageFn) {
+  constructor(windowSeconds, sendMessageFn, editMessageFn, maxQueueSize = 100) {
     this.window = windowSeconds * 1000;
     this.pending = [];
     this.timer = null;
     this.compactingMessageId = null;
     this.sendMessageFn = sendMessageFn;
     this.editMessageFn = editMessageFn;
+    this.maxQueueSize = maxQueueSize;
   }
 
   async add(message, priority = "normal") {
+    // Auto-flush if queue is full
+    if (this.pending.length >= this.maxQueueSize) {
+      log("info", "Message queue at max capacity, auto-flushing", {
+        queue_size: this.pending.length,
+        max_size: this.maxQueueSize,
+      });
+      await this.flush();
+    }
+
     this.pending.push({ message, priority, timestamp: Date.now() });
+
+    // Remove old messages beyond retention window (2x batch window)
+    const now = Date.now();
+    const cutoff = now - (this.window * 2);
+    const beforeCleanup = this.pending.length;
+    this.pending = this.pending.filter(m => m.timestamp > cutoff);
+
+    if (this.pending.length < beforeCleanup) {
+      log("info", "Cleaned up old messages from queue", {
+        removed: beforeCleanup - this.pending.length,
+        remaining: this.pending.length,
+      });
+    }
 
     // High priority messages send immediately
     if (priority === "high") {

@@ -303,5 +303,173 @@ smart_keywords:
       expect(CONFIG_SCHEMA.timeout_seconds.min).toBe(10);
       expect(CONFIG_SCHEMA.timeout_seconds.max).toBe(3600);
     });
+
+    it('should have rate_limiting configuration', () => {
+      expect(CONFIG_SCHEMA.rate_limiting).toBeDefined();
+      expect(CONFIG_SCHEMA.rate_limiting.type).toBe('object');
+      expect(CONFIG_SCHEMA.rate_limiting.properties.messages_per_minute).toBeDefined();
+      expect(CONFIG_SCHEMA.rate_limiting.properties.burst_size).toBeDefined();
+    });
+
+    it('should have correct rate_limiting defaults', () => {
+      expect(CONFIG_SCHEMA.rate_limiting.properties.messages_per_minute.default).toBe(20);
+      expect(CONFIG_SCHEMA.rate_limiting.properties.burst_size.default).toBe(5);
+    });
+
+    it('should have correct rate_limiting validation rules', () => {
+      expect(CONFIG_SCHEMA.rate_limiting.properties.messages_per_minute.min).toBe(1);
+      expect(CONFIG_SCHEMA.rate_limiting.properties.messages_per_minute.max).toBe(30);
+      expect(CONFIG_SCHEMA.rate_limiting.properties.burst_size.min).toBe(1);
+      expect(CONFIG_SCHEMA.rate_limiting.properties.burst_size.max).toBe(10);
+    });
+  });
+
+  describe('Security: Rate limiting configuration', () => {
+    it('should apply default rate limiting values', () => {
+      const minimalConfig = `---
+bot_token: "test_token"
+chat_id: "123456"
+---`;
+
+      writeFileSync(testConfigFile, minimalConfig);
+      const config = loadConfig(testConfigFile);
+
+      expect(config.rate_limiting.messages_per_minute).toBe(20);
+      expect(config.rate_limiting.burst_size).toBe(5);
+    });
+
+    it('should accept custom rate limiting configuration', () => {
+      const customConfig = `---
+bot_token: "test_token"
+chat_id: "123456"
+rate_limiting:
+  messages_per_minute: 15
+  burst_size: 3
+---`;
+
+      writeFileSync(testConfigFile, customConfig);
+      const config = loadConfig(testConfigFile);
+
+      expect(config.rate_limiting.messages_per_minute).toBe(15);
+      expect(config.rate_limiting.burst_size).toBe(3);
+    });
+
+    it('should validate messages_per_minute minimum', () => {
+      const invalidConfig = `---
+bot_token: "test_token"
+chat_id: "123456"
+rate_limiting:
+  messages_per_minute: 0
+---`;
+
+      writeFileSync(testConfigFile, invalidConfig);
+
+      expect(() => {
+        loadConfig(testConfigFile);
+      }).toThrow('at least 1');
+    });
+
+    it('should validate messages_per_minute maximum', () => {
+      const invalidConfig = `---
+bot_token: "test_token"
+chat_id: "123456"
+rate_limiting:
+  messages_per_minute: 50
+---`;
+
+      writeFileSync(testConfigFile, invalidConfig);
+
+      expect(() => {
+        loadConfig(testConfigFile);
+      }).toThrow('at most 30');
+    });
+
+    it('should validate burst_size minimum', () => {
+      const invalidConfig = `---
+bot_token: "test_token"
+chat_id: "123456"
+rate_limiting:
+  burst_size: 0
+---`;
+
+      writeFileSync(testConfigFile, invalidConfig);
+
+      expect(() => {
+        loadConfig(testConfigFile);
+      }).toThrow('at least 1');
+    });
+
+    it('should validate burst_size maximum', () => {
+      const invalidConfig = `---
+bot_token: "test_token"
+chat_id: "123456"
+rate_limiting:
+  burst_size: 15
+---`;
+
+      writeFileSync(testConfigFile, invalidConfig);
+
+      expect(() => {
+        loadConfig(testConfigFile);
+      }).toThrow('at most 10');
+    });
+
+    it('should use safe default for Telegram API (20 msgs/min)', () => {
+      const minimalConfig = `---
+bot_token: "test_token"
+chat_id: "123456"
+---`;
+
+      writeFileSync(testConfigFile, minimalConfig);
+      const config = loadConfig(testConfigFile);
+
+      // Default is 20, which is safe for Telegram (below 30/min limit)
+      expect(config.rate_limiting.messages_per_minute).toBe(20);
+    });
+
+    it('should allow partial rate_limiting configuration', () => {
+      const partialConfig = `---
+bot_token: "test_token"
+chat_id: "123456"
+rate_limiting:
+  messages_per_minute: 10
+---`;
+
+      writeFileSync(testConfigFile, partialConfig);
+      const config = loadConfig(testConfigFile);
+
+      expect(config.rate_limiting.messages_per_minute).toBe(10);
+      expect(config.rate_limiting.burst_size).toBe(5); // Default
+    });
+
+    it('should reject non-numeric messages_per_minute', () => {
+      const invalidConfig = `---
+bot_token: "test_token"
+chat_id: "123456"
+rate_limiting:
+  messages_per_minute: "fast"
+---`;
+
+      writeFileSync(testConfigFile, invalidConfig);
+
+      expect(() => {
+        loadConfig(testConfigFile);
+      }).toThrow('must be a number');
+    });
+
+    it('should reject non-numeric burst_size', () => {
+      const invalidConfig = `---
+bot_token: "test_token"
+chat_id: "123456"
+rate_limiting:
+  burst_size: "large"
+---`;
+
+      writeFileSync(testConfigFile, invalidConfig);
+
+      expect(() => {
+        loadConfig(testConfigFile);
+      }).toThrow('must be a number');
+    });
   });
 });

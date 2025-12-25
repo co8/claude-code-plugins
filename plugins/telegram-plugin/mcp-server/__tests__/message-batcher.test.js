@@ -186,6 +186,80 @@ describe('MessageBatcher', () => {
       await expect(batcher.flush()).resolves.toBeDefined();
     });
   });
+
+  describe('Performance optimizations (O1)', () => {
+    it('should accept custom maxQueueSize parameter', () => {
+      const customBatcher = new MessageBatcher(5, sendMessageFn, editMessageFn, 50);
+      expect(customBatcher.maxQueueSize).toBe(50);
+    });
+
+    it('should default to maxQueueSize of 100', () => {
+      expect(batcher.maxQueueSize).toBe(100);
+    });
+
+    it('should auto-flush when queue reaches max capacity', async () => {
+      const smallBatcher = new MessageBatcher(5, sendMessageFn, editMessageFn, 3);
+
+      await smallBatcher.add('Message 1', 'normal');
+      await smallBatcher.add('Message 2', 'normal');
+      await smallBatcher.add('Message 3', 'normal');
+
+      expect(smallBatcher.pending.length).toBe(3);
+
+      // Adding 4th message should trigger auto-flush
+      await smallBatcher.add('Message 4', 'normal');
+
+      // After flush, should only have the 4th message
+      expect(smallBatcher.pending.length).toBe(1);
+      expect(sentMessages.length).toBeGreaterThan(0);
+    });
+
+    it('should clean up old messages beyond retention window', async () => {
+      jest.useRealTimers(); // Use real timers for this test
+
+      const fastBatcher = new MessageBatcher(
+        1, // 1 second window
+        sendMessageFn,
+        editMessageFn,
+        100
+      );
+
+      await fastBatcher.add('Old message', 'normal');
+
+      // Wait longer than 2x the window (3 seconds for 1 second window)
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Add new message which triggers cleanup
+      await fastBatcher.add('New message', 'normal');
+
+      // Should only have the new message
+      expect(fastBatcher.pending.length).toBe(1);
+      expect(fastBatcher.pending[0].message).toBe('New message');
+
+      jest.useFakeTimers(); // Restore fake timers
+    }, 15000); // Increase timeout for this test
+
+    it('should not clean up recent messages', async () => {
+      await batcher.add('Recent 1', 'normal');
+      await batcher.add('Recent 2', 'normal');
+      await batcher.add('Recent 3', 'normal');
+
+      // All messages should still be present
+      expect(batcher.pending.length).toBe(3);
+    });
+
+    it('should prevent unbounded memory growth', async () => {
+      const smallBatcher = new MessageBatcher(5, sendMessageFn, editMessageFn, 10);
+
+      // Try to add 20 messages
+      for (let i = 0; i < 20; i++) {
+        await smallBatcher.add(`Message ${i}`, 'normal');
+      }
+
+      // Queue should never exceed maxQueueSize + 1 (one more before flush)
+      expect(smallBatcher.pending.length).toBeLessThanOrEqual(11);
+    });
+  });
 });
 
 describe('batchNotifications', () => {

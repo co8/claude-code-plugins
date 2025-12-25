@@ -36,22 +36,28 @@ if [ -z "$notification_text" ] || [ "$notification_text" = "null" ]; then
   exit 0
 fi
 
-# Extract keywords from config (default set)
+# Pre-compiled keywords regex for efficiency (O6 optimization)
+# Using single grep call with early exit on first match
 keywords="suggest|recommend|discovered|insight|clarify|important|note|warning|critical|found|identified"
 
 # Check if notification contains any keywords (case-insensitive)
-if echo "$notification_text" | grep -iE "$keywords" > /dev/null 2>&1; then
-  # Match found - suggest sending notification
-  matched_keyword=$(echo "$notification_text" | grep -ioE "$keywords" 2>/dev/null | head -1 || echo "keyword")
+# Run grep once and capture the matched keyword (O6 optimization)
+matched_keyword=$(echo "$notification_text" | grep -ioE "$keywords" | head -1)
 
-  echo "{
-    \"continue\": true,
-    \"suppressOutput\": false,
-    \"systemMessage\": \"[Telegram Plugin] Smart notification detected (keyword: '$matched_keyword'). Consider using send_message MCP tool to notify user via Telegram.\"
-  }"
-else
-  # No match
-  echo '{"continue": true, "suppressOutput": true}'
+# If match found (non-empty result), send notification
+if [ -n "$matched_keyword" ]; then
+  # Output and exit immediately
+  cat <<EOF
+{
+  "continue": true,
+  "suppressOutput": false,
+  "systemMessage": "[Telegram Plugin] Smart notification detected (keyword: '$matched_keyword'). Consider using send_message MCP tool to notify user via Telegram."
+}
+EOF
+  exit 0
 fi
+
+# No match - fast path
+echo '{"continue": true, "suppressOutput": true}'
 
 exit 0

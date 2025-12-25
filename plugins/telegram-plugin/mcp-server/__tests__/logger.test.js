@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { log, setConfig } from '../utils/logger.js';
+import { log, setConfig, __resetLoggerState } from '../utils/logger.js';
 import { existsSync, unlinkSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -11,6 +11,9 @@ const LOG_PATH = join(dirname(dirname(__dirname)), 'telegram.log');
 
 describe('Logger', () => {
   beforeEach(() => {
+    // Reset logger state to avoid test interference
+    __resetLoggerState();
+
     // Clean up any existing log files
     if (existsSync(LOG_PATH)) {
       unlinkSync(LOG_PATH);
@@ -187,6 +190,213 @@ describe('Logger', () => {
 
       const content = readFileSync(LOG_PATH, 'utf-8');
       expect(content).toContain('Test');
+    });
+  });
+
+  describe('Security: Sensitive data scrubbing', () => {
+    it('should mask bot_token in logs', () => {
+      setConfig({ logging_level: 'all' });
+
+      const sensitiveData = {
+        bot_token: '123456789:ABCdefGHIjklMNOpqrsTUVwxyz',
+        message: 'Test message'
+      };
+
+      log('info', 'Bot initialized', sensitiveData);
+
+      const content = readFileSync(LOG_PATH, 'utf-8');
+      expect(content).toContain('123456789:***');
+      expect(content).not.toContain('ABCdefGHIjklMNOpqrsTUVwxyz');
+      expect(content).toContain('Test message');
+    });
+
+    it('should mask token field in logs', () => {
+      setConfig({ logging_level: 'all' });
+
+      const sensitiveData = {
+        token: 'secret_token_123456789',
+        user: 'testuser'
+      };
+
+      log('info', 'Authentication', sensitiveData);
+
+      const content = readFileSync(LOG_PATH, 'utf-8');
+      expect(content).toContain('secret_tok***');
+      expect(content).not.toContain('secret_token_123456789');
+      expect(content).toContain('testuser');
+    });
+
+    it('should mask password field in logs', () => {
+      setConfig({ logging_level: 'all' });
+
+      const sensitiveData = {
+        username: 'admin',
+        password: 'super_secret_password'
+      };
+
+      log('info', 'Login attempt', sensitiveData);
+
+      const content = readFileSync(LOG_PATH, 'utf-8');
+      expect(content).toContain('super_secr***');
+      expect(content).not.toContain('super_secret_password');
+      expect(content).toContain('admin');
+    });
+
+    it('should mask secret field in logs', () => {
+      setConfig({ logging_level: 'all' });
+
+      const sensitiveData = {
+        secret: 'my_secret_key_12345',
+        config: 'test'
+      };
+
+      log('info', 'Config loaded', sensitiveData);
+
+      const content = readFileSync(LOG_PATH, 'utf-8');
+      expect(content).toContain('my_secret_***');
+      expect(content).not.toContain('my_secret_key_12345');
+      expect(content).toContain('test');
+    });
+
+    it('should mask apiKey and api_key fields in logs', () => {
+      setConfig({ logging_level: 'all' });
+
+      const sensitiveData = {
+        apiKey: 'api_key_123456789',
+        api_key: 'another_key_987654321',
+        service: 'external_api'
+      };
+
+      log('info', 'API call', sensitiveData);
+
+      const content = readFileSync(LOG_PATH, 'utf-8');
+      expect(content).toContain('api_key_12***');
+      expect(content).toContain('another_ke***');
+      expect(content).not.toContain('api_key_123456789');
+      expect(content).not.toContain('another_key_987654321');
+      expect(content).toContain('external_api');
+    });
+
+    it('should mask nested sensitive data in logs', () => {
+      setConfig({ logging_level: 'all' });
+
+      const sensitiveData = {
+        config: {
+          bot_token: '123456789:ABCdefGHIjklMNOpqrsTUVwxyz',
+          timeout: 600
+        },
+        status: 'active'
+      };
+
+      log('info', 'Nested config', sensitiveData);
+
+      const content = readFileSync(LOG_PATH, 'utf-8');
+      expect(content).toContain('123456789:***');
+      expect(content).not.toContain('ABCdefGHIjklMNOpqrsTUVwxyz');
+      expect(content).toContain('600');
+      expect(content).toContain('active');
+    });
+
+    it('should handle case-insensitive sensitive key matching', () => {
+      setConfig({ logging_level: 'all' });
+
+      const sensitiveData = {
+        Bot_Token: 'token_with_mixed_case_123',
+        PASSWORD: 'uppercase_password',
+        ApiKey: 'mixed_case_api_key'
+      };
+
+      log('info', 'Mixed case test', sensitiveData);
+
+      const content = readFileSync(LOG_PATH, 'utf-8');
+      expect(content).toContain('token_with***');
+      expect(content).toContain('uppercase_***');
+      expect(content).toContain('mixed_case***');
+      expect(content).not.toContain('token_with_mixed_case_123');
+      expect(content).not.toContain('uppercase_password');
+      expect(content).not.toContain('mixed_case_api_key');
+    });
+
+    it('should mask sensitive data in arrays', () => {
+      setConfig({ logging_level: 'all' });
+
+      const sensitiveData = {
+        credentials: [
+          { token: 'token1_secret' },
+          { token: 'token2_secret' }
+        ]
+      };
+
+      log('info', 'Array test', sensitiveData);
+
+      const content = readFileSync(LOG_PATH, 'utf-8');
+      expect(content).toContain('token1_sec***');
+      expect(content).toContain('token2_sec***');
+      expect(content).not.toContain('token1_secret');
+      expect(content).not.toContain('token2_secret');
+    });
+
+    it('should not mask non-sensitive data', () => {
+      setConfig({ logging_level: 'all' });
+
+      const normalData = {
+        message_id: 12345,
+        chat_id: '987654321',
+        text: 'Hello world',
+        priority: 'high'
+      };
+
+      log('info', 'Normal data', normalData);
+
+      const content = readFileSync(LOG_PATH, 'utf-8');
+      expect(content).toContain('12345');
+      expect(content).toContain('987654321');
+      expect(content).toContain('Hello world');
+      expect(content).toContain('high');
+    });
+
+    it('should handle empty strings in sensitive fields', () => {
+      setConfig({ logging_level: 'all' });
+
+      const data = {
+        bot_token: '',
+        message: 'test'
+      };
+
+      log('info', 'Empty token', data);
+
+      const content = readFileSync(LOG_PATH, 'utf-8');
+      expect(content).toContain('test');
+    });
+
+    it('should handle null and undefined values', () => {
+      setConfig({ logging_level: 'all' });
+
+      const data = {
+        bot_token: null,
+        password: undefined,
+        message: 'test'
+      };
+
+      log('info', 'Null values', data);
+
+      const content = readFileSync(LOG_PATH, 'utf-8');
+      expect(content).toContain('test');
+    });
+
+    it('should not modify original data object', () => {
+      setConfig({ logging_level: 'all' });
+
+      const originalData = {
+        bot_token: '123456789:ABCdefGHIjklMNOpqrsTUVwxyz',
+        message: 'test'
+      };
+
+      log('info', 'Original preservation', originalData);
+
+      // Original should remain unchanged
+      expect(originalData.bot_token).toBe('123456789:ABCdefGHIjklMNOpqrsTUVwxyz');
+      expect(originalData.message).toBe('test');
     });
   });
 });

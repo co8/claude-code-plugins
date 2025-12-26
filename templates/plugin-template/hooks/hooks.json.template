@@ -1,0 +1,14 @@
+{
+  "hooks": [
+    {
+      "event": "SessionStart",
+      "script": "scripts/session-start.sh",
+      "description": "Runs when a Claude Code session starts"
+    },
+    {
+      "event": "SessionEnd",
+      "script": "scripts/session-end.sh",
+      "description": "Runs when a Claude Code session ends"
+    }
+  ]
+}

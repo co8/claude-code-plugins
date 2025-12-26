@@ -1,0 +1,21 @@
+{
+  "name": "{{PLUGIN_NAME}}-mcp-server",
+  "version": "{{VERSION}}",
+  "description": "{{DESCRIPTION}}",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "author": "{{AUTHOR_NAME}} <{{AUTHOR_EMAIL}}>",
+  "license": "{{LICENSE}}"
+}

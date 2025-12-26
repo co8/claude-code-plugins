@@ -1,0 +1,57 @@
+{
+  "name": "{{PLUGIN_NAME}}",
+  "displayName": "{{DISPLAY_NAME}}",
+  "version": "{{VERSION}}",
+  "description": "{{DESCRIPTION}}",
+  "longDescription": "{{DESCRIPTION}}",
+  "author": {
+    "name": "{{AUTHOR_NAME}}",
+    "email": "{{AUTHOR_EMAIL}}"
+  },
+  "license": "{{LICENSE}}",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/cc-plugins"
+  },
+  "keywords": [],
+  "categories": [
+    "{{CATEGORY}}"
+  ],
+  "features": [],
+  "screenshots": [],
+  "requirements": {
+    "claude_code_version": ">=1.0.0",
+    "node_version": ">=18.0.0"
+  },
+  "installation": {
+    "quickStart": "/{{PLUGIN_NAME}}:configure",
+    "steps": [
+      "Run /{{PLUGIN_NAME}}:configure for setup"
+    ]
+  },
+  "commands": [],
+  "hooks": [],
+  "mcp_servers": [
+    {
+      "name": "{{PLUGIN_NAME}}",
+      "description": "{{DESCRIPTION}}",
+      "path": "mcp-server/server.js"
+    }
+  ],
+  "configuration": {
+    "file": ".claude/{{PLUGIN_NAME}}.local.md",
+    "format": "YAML frontmatter",
+    "settings": []
+  },
+  "tags": [],
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "tested_with": [
+      "claude-code@latest"
+    ]
+  }
+}

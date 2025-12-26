@@ -1,0 +1,9 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Config
+.claude/*.local.md
+
+# Logs
+*.log

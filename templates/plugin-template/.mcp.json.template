@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "{{PLUGIN_NAME}}": {
+      "command": "node",
+      "args": [
+        "mcp-server/server.js"
+      ]
+    }
+  }
+}

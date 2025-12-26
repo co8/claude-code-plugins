@@ -1,0 +1,116 @@
+# {{DISPLAY_NAME}}
+
+{{DESCRIPTION}}
+
+## Features
+
+- Feature 1
+- Feature 2
+- Feature 3
+
+## Installation
+
+1. Clone or download this plugin to your Claude Code plugins directory
+2. Navigate to the plugin directory:
+   ```bash
+   cd plugins/{{PLUGIN_NAME}}
+   ```
+3. Install dependencies:
+   ```bash
+   cd mcp-server && npm install
+   ```
+4. Run the setup command:
+   ```
+   /{{PLUGIN_NAME}}:configure
+   ```
+
+## Configuration
+
+Create a configuration file at `~/.claude/{{PLUGIN_NAME}}.local.md`:
+
+```yaml
+---
+# Your configuration here
+setting1: value1
+setting2: value2
+logging_level: errors  # Options: all, errors, none
+---
+```
+
+### Configuration Options
+
+- `setting1` (required): Description
+- `setting2` (optional): Description
+- `logging_level` (optional): Log verbosity (all, errors, none). Default: errors
+
+## Usage
+
+### Commands
+
+Run these commands in Claude Code:
+
+- `/{{PLUGIN_NAME}}:configure` - Interactive configuration wizard
+- Add your commands here
+
+### MCP Tools
+
+The plugin provides the following tools to Claude:
+
+- `{{PLUGIN_NAME}}:example_tool` - Description of what it does
+
+### Hooks
+
+The plugin automatically responds to:
+
+- `SessionStart` - When a Claude Code session begins
+- `SessionEnd` - When a Claude Code session ends
+
+## Development
+
+### Running Tests
+
+```bash
+cd mcp-server
+npm test
+```
+
+### Project Structure
+
+```
+{{PLUGIN_NAME}}/
+├── .claude-plugin/      # Plugin metadata
+├── mcp-server/          # MCP server implementation
+│   ├── config/          # Configuration loading
+│   ├── server/          # Tool schemas and handlers
+│   ├── services/        # Business logic
+│   └── utils/           # Utilities (logger, etc.)
+├── hooks/               # Event hooks
+│   └── scripts/         # Hook scripts
+├── commands/            # Slash commands
+├── skills/              # Knowledge bases
+└── tests/               # Test suites
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Configuration not found:**
+- Ensure you've run `/{{PLUGIN_NAME}}:configure`
+- Check that the config file exists at `~/.claude/{{PLUGIN_NAME}}.local.md`
+
+**Tool not working:**
+- Check logs at `~/.claude/logs/{{PLUGIN_NAME}}.log`
+- Verify all required configuration fields are set
+
+## License
+
+{{LICENSE}}
+
+## Author
+
+{{AUTHOR_NAME}} ({{AUTHOR_EMAIL}})
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues or pull requests.

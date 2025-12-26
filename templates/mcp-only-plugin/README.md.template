@@ -1,0 +1,55 @@
+# {{DISPLAY_NAME}}
+
+{{DESCRIPTION}}
+
+## Features
+
+This plugin provides MCP tools to Claude Code.
+
+## Installation
+
+1. Navigate to the plugin directory:
+   ```bash
+   cd plugins/{{PLUGIN_NAME}}
+   ```
+2. Install dependencies:
+   ```bash
+   cd mcp-server && npm install
+   ```
+
+## Configuration
+
+Create a configuration file at `~/.claude/{{PLUGIN_NAME}}.local.md`:
+
+```yaml
+---
+# Your configuration here
+setting1: value1
+logging_level: errors  # Options: all, errors, none
+---
+```
+
+## Usage
+
+### MCP Tools
+
+The plugin provides the following tools to Claude:
+
+- `{{PLUGIN_NAME}}:example_tool` - Description of what it does
+
+## Development
+
+### Running Tests
+
+```bash
+cd mcp-server
+npm test
+```
+
+## License
+
+{{LICENSE}}
+
+## Author
+
+{{AUTHOR_NAME}} ({{AUTHOR_EMAIL}})

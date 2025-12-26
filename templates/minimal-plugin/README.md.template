@@ -1,0 +1,20 @@
+# {{DISPLAY_NAME}}
+
+{{DESCRIPTION}}
+
+## Installation
+
+1. Copy this plugin to your Claude Code plugins directory
+2. The plugin will automatically run on session start
+
+## Configuration
+
+No configuration required for this minimal plugin.
+
+## Customization
+
+Edit `hooks/session-start.sh` to customize the hook behavior.
+
+## License
+
+{{LICENSE}}

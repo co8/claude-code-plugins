@@ -1,0 +1,80 @@
+#!/usr/bin/env node
+
+/**
+ * {{DISPLAY_NAME}} MCP Server
+ * {{DESCRIPTION}}
+ *
+ * Version: {{VERSION}}
+ * Author: {{AUTHOR_NAME}}
+ */
+
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
+
+import { loadConfig, getConfigPath } from './config/config-loader.js';
+import { log, setConfig } from './utils/logger.js';
+import { TOOLS } from './server/schemas.js';
+import { handleToolCall } from './server/handlers.js';
+
+// Load configuration
+let config = null;
+try {
+  const configPath = getConfigPath();
+  config = loadConfig(configPath);
+  setConfig(config);
+  log('info', '{{DISPLAY_NAME}} MCP server initializing', { config_path: configPath });
+} catch (error) {
+  log('error', 'Failed to load configuration', { error: error.message });
+  console.error(`Configuration error: ${error.message}`);
+  console.error(`Please create a config file at: ${getConfigPath()}`);
+  process.exit(1);
+}
+
+// Create MCP Server
+const server = new Server(
+  {
+    name: "{{PLUGIN_NAME}}",
+    version: "{{VERSION}}",
+  },
+  {
+    capabilities: {
+      tools: {},
+    },
+  }
+);
+
+// List available tools
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  return { tools: TOOLS };
+});
+
+// Handle tool calls
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  try {
+    const result = await handleToolCall(request, config);
+    return result;
+  } catch (error) {
+    log('error', 'Tool execution failed', {
+      tool: request.params.name,
+      error: error.message
+    });
+    throw error;
+  }
+});
+
+// Start server
+async function main() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  log('info', '{{DISPLAY_NAME}} MCP server started');
+}
+
+main().catch((error) => {
+  log('error', 'Server startup failed', { error: error.message });
+  console.error('Fatal error:', error);
+  process.exit(1);
+});

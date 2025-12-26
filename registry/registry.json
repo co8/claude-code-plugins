@@ -1,0 +1,110 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "last_updated": "2024-12-25T00:00:00.000Z",
+    "total_plugins": 1,
+    "total_downloads": 0
+  },
+  "plugins": {
+    "telegram-plugin": {
+      "name": "telegram-plugin",
+      "displayName": "Claude Code Telegram Bot",
+      "description": "Remote interaction with Claude Code via Telegram - receive task updates, approval requests, and control sessions from your phone",
+      "longDescription": "Control and monitor Claude Code remotely via Telegram. Receive smart notifications about task completions, errors, session events, and important insights. Respond to Claude's questions via Telegram inline keyboards. Stay connected to your development workflow from anywhere.",
+      "author": {
+        "name": "Enrique R Grullon",
+        "email": "e@co8.com",
+        "url": "https://co8.com",
+        "verified": true
+      },
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/co8/cc-plugins",
+        "directory": "plugins/telegram-plugin"
+      },
+      "homepage": "https://github.com/co8/cc-plugins/tree/main/plugins/telegram-plugin",
+      "versions": {
+        "0.3.1": {
+          "version": "0.3.1",
+          "releaseDate": "2024-12-20T00:00:00.000Z",
+          "tarball": "https://github.com/co8/cc-plugins/releases/download/v0.3.1/telegram-plugin-0.3.1.tar.gz",
+          "integrity": "sha512-placeholder",
+          "dependencies": {},
+          "peerDependencies": {
+            "claude-code": ">=1.0.0"
+          },
+          "minClaudeVersion": "1.0.0",
+          "minNodeVersion": "18.0.0",
+          "releaseNotes": "Initial registry release with core features: smart notifications, remote approvals, keyword detection, message batching, and full configurability.",
+          "breaking": false,
+          "deprecated": false
+        },
+        "0.3.0": {
+          "version": "0.3.0",
+          "releaseDate": "2024-12-15T00:00:00.000Z",
+          "tarball": "https://github.com/co8/cc-plugins/releases/download/v0.3.0/telegram-plugin-0.3.0.tar.gz",
+          "integrity": "sha512-placeholder",
+          "dependencies": {},
+          "peerDependencies": {
+            "claude-code": ">=1.0.0"
+          },
+          "minClaudeVersion": "1.0.0",
+          "minNodeVersion": "18.0.0",
+          "releaseNotes": "Added message batching and improved notification system.",
+          "breaking": false,
+          "deprecated": false
+        }
+      },
+      "latest": "0.3.1",
+      "categories": [
+        "notifications",
+        "remote-control",
+        "productivity"
+      ],
+      "tags": [
+        "telegram",
+        "bot",
+        "remote-control",
+        "notifications",
+        "mobile",
+        "workflow",
+        "automation",
+        "approvals",
+        "messaging"
+      ],
+      "features": [
+        {
+          "title": "Smart Notifications",
+          "description": "Get notified about task completions, errors, session events, and important insights",
+          "icon": "📬"
+        },
+        {
+          "title": "Remote Approvals",
+          "description": "Respond to Claude's questions via Telegram inline keyboards from anywhere",
+          "icon": "✅"
+        },
+        {
+          "title": "Keyword Detection",
+          "description": "Automatically detect suggestions, clarifications, and discoveries in Claude's responses",
+          "icon": "🔔"
+        },
+        {
+          "title": "Batched Messages",
+          "description": "Reduce notification noise with intelligent message batching",
+          "icon": "⚡"
+        },
+        {
+          "title": "Fully Configurable",
+          "description": "Customize notifications, timeouts, and logging preferences to your workflow",
+          "icon": "🎛️"
+        }
+      ],
+      "screenshots": [],
+      "downloads": 0,
+      "rating": 4.8,
+      "verified": true,
+      "deprecated": false
+    }
+  }
+}

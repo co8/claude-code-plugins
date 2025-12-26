@@ -1,0 +1,320 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cc-plugins.com/schemas/registry.json",
+  "title": "CC-Plugins Registry Schema",
+  "description": "Schema for the centralized Claude Code plugin registry",
+  "type": "object",
+  "required": ["version", "plugins", "metadata"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Registry schema version (semver)",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["last_updated"],
+      "properties": {
+        "last_updated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of last registry update"
+        },
+        "total_plugins": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of plugins in registry"
+        },
+        "total_downloads": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total downloads across all plugins"
+        }
+      }
+    },
+    "plugins": {
+      "type": "object",
+      "description": "Map of plugin names to plugin metadata",
+      "additionalProperties": {
+        "$ref": "#/definitions/plugin"
+      }
+    }
+  },
+  "definitions": {
+    "plugin": {
+      "type": "object",
+      "required": [
+        "name",
+        "displayName",
+        "description",
+        "author",
+        "license",
+        "repository",
+        "versions",
+        "latest",
+        "categories",
+        "tags"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Unique plugin identifier (kebab-case)",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Human-readable plugin name",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "description": {
+          "type": "string",
+          "description": "Short plugin description",
+          "minLength": 10,
+          "maxLength": 200
+        },
+        "longDescription": {
+          "type": "string",
+          "description": "Detailed plugin description (markdown supported)",
+          "maxLength": 2000
+        },
+        "author": {
+          "$ref": "#/definitions/author"
+        },
+        "license": {
+          "type": "string",
+          "description": "SPDX license identifier",
+          "enum": ["MIT", "Apache-2.0", "BSD-3-Clause", "GPL-3.0", "ISC", "Unlicense"]
+        },
+        "repository": {
+          "type": "object",
+          "required": ["type", "url"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["git"]
+            },
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "description": "Repository URL"
+            },
+            "directory": {
+              "type": "string",
+              "description": "Subdirectory if monorepo"
+            }
+          }
+        },
+        "homepage": {
+          "type": "string",
+          "format": "uri",
+          "description": "Plugin homepage or documentation URL"
+        },
+        "versions": {
+          "type": "object",
+          "description": "Map of versions to version metadata",
+          "minProperties": 1,
+          "additionalProperties": {
+            "$ref": "#/definitions/version"
+          }
+        },
+        "latest": {
+          "type": "string",
+          "description": "Latest stable version (semver)",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.-]+)?(\\+[a-zA-Z0-9.-]+)?$"
+        },
+        "categories": {
+          "type": "array",
+          "description": "Plugin categories for organization",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "type": "string",
+            "enum": [
+              "notifications",
+              "remote-control",
+              "productivity",
+              "automation",
+              "communication",
+              "development-tools",
+              "testing",
+              "deployment",
+              "monitoring",
+              "security",
+              "data",
+              "integration",
+              "utilities",
+              "other"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "tags": {
+          "type": "array",
+          "description": "Searchable tags",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "uniqueItems": true
+        },
+        "features": {
+          "type": "array",
+          "description": "Key features list",
+          "items": {
+            "type": "object",
+            "required": ["title", "description"],
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 50
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "icon": {
+                "type": "string",
+                "description": "Emoji or icon identifier"
+              }
+            }
+          }
+        },
+        "screenshots": {
+          "type": "array",
+          "description": "Screenshot URLs",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "downloads": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total download count"
+        },
+        "rating": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 5,
+          "description": "Average user rating (0-5)"
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "Whether publisher is verified",
+          "default": false
+        },
+        "deprecated": {
+          "type": "boolean",
+          "description": "Whether plugin is deprecated",
+          "default": false
+        },
+        "deprecationMessage": {
+          "type": "string",
+          "description": "Deprecation notice for users"
+        }
+      }
+    },
+    "version": {
+      "type": "object",
+      "required": [
+        "version",
+        "releaseDate",
+        "tarball",
+        "integrity"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Semantic version",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.-]+)?(\\+[a-zA-Z0-9.-]+)?$"
+        },
+        "releaseDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 release timestamp"
+        },
+        "tarball": {
+          "type": "string",
+          "format": "uri",
+          "description": "Download URL for plugin tarball"
+        },
+        "integrity": {
+          "type": "string",
+          "description": "Subresource Integrity hash (sha512)",
+          "pattern": "^sha512-[A-Za-z0-9+/]+=*$"
+        },
+        "dependencies": {
+          "type": "object",
+          "description": "Plugin dependencies (name -> version range)",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[~^]?\\d+\\.\\d+\\.\\d+.*$"
+          }
+        },
+        "peerDependencies": {
+          "type": "object",
+          "description": "Peer dependencies (e.g., Claude Code version)",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "minClaudeVersion": {
+          "type": "string",
+          "description": "Minimum Claude Code version required",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "minNodeVersion": {
+          "type": "string",
+          "description": "Minimum Node.js version required",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "releaseNotes": {
+          "type": "string",
+          "description": "Markdown release notes"
+        },
+        "breaking": {
+          "type": "boolean",
+          "description": "Whether version contains breaking changes",
+          "default": false
+        },
+        "deprecated": {
+          "type": "boolean",
+          "description": "Whether this specific version is deprecated",
+          "default": false
+        }
+      }
+    },
+    "author": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Author name",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Author email address"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Author website or profile URL"
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "Whether author identity is verified",
+          "default": false
+        }
+      }
+    }
+  }
+}
